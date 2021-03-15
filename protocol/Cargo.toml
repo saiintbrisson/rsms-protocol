@@ -11,6 +11,7 @@ protocol_derive = { path = "../protocol_derive" }
 protocol_internal = { path = "../protocol_internal" }
 
 [features]
-default = ["packets"]
+default = ["derive", "packets"]
 
+derive = []
 packets = []
