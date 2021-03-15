@@ -1,3 +1,4 @@
+mod bool;
 mod dyn_array;
 mod numeral {
     mod int;
