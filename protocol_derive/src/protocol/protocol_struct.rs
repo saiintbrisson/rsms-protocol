@@ -1,13 +1,12 @@
 use quote::{quote, ToTokens};
-use syn::{
-    parse_quote, spanned::Spanned, Attribute, Error, Field, FieldsNamed, MetaList,
-};
+use syn::{parse_quote, spanned::Spanned, Attribute, Error, Field, FieldsNamed, MetaList};
 
 use super::field::{FieldValidator, PacketField};
 
 pub(crate) fn expand_struct(data_struct: &syn::DataStruct) -> crate::LSDResult {
     let fields_named = match &data_struct.fields {
         syn::Fields::Named(named) => named,
+        syn::Fields::Unit => return Ok((quote! { 0 }, quote! { Ok(()) }, quote! { Ok(Self) })),
         _ => {
             return Err(syn::Error::new(
                 data_struct.fields.span(),
