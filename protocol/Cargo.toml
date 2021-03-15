@@ -1,0 +1,16 @@
+[package]
+name = "protocol"
+version = "0.1.0"
+authors = ["Luiz Carlos Mourão Paes de Carvalho <luizcarlosmpc@gmail.com>"]
+edition = "2018"
+
+# See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
+
+[dependencies]
+protocol_derive = { path = "../protocol_derive" }
+protocol_internal = { path = "../protocol_internal" }
+
+[features]
+default = ["packets"]
+
+packets = []
