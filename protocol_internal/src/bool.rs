@@ -13,7 +13,10 @@ impl ProtocolSupport for bool {
         Ok(match src.read_u8()? {
             0 => false,
             1 => true,
-            _ => Err(io::Error::new(io::ErrorKind::InvalidInput, "invalid bool value"))?
+            _ => Err(io::Error::new(
+                io::ErrorKind::InvalidInput,
+                "invalid bool value",
+            ))?,
         })
     }
 

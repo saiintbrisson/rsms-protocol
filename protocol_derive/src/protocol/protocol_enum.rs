@@ -1,7 +1,11 @@
 use quote::quote;
 use syn::{parse_quote, Attribute, Ident};
 
-pub(crate) fn expand_enum(ident: &Ident, data_enum: &syn::DataEnum, attrs: &Vec<Attribute>) -> crate::LSDResult {
+pub(crate) fn expand_enum(
+    ident: &Ident,
+    data_enum: &syn::DataEnum,
+    attrs: &Vec<Attribute>,
+) -> crate::LSDResult {
     let variants = data_enum
         .variants
         .iter()
@@ -24,14 +28,14 @@ pub(crate) fn expand_enum(ident: &Ident, data_enum: &syn::DataEnum, attrs: &Vec<
     };
 
     Ok((
-        quote! { #path::calculate_len(&(*self as #ty)) }, 
-        quote! { #path::serialize(&(*self as #ty), dst) }, 
+        quote! { #path::calculate_len(&(*self as #ty)) },
+        quote! { #path::serialize(&(*self as #ty), dst) },
         quote! {
             Ok(match #path::deserialize(src)? {
                 #(#variants)*
                 next_state => return Err(std::io::Error::new(std::io::ErrorKind::InvalidInput, format!("did not expect next state {}", next_state)))
             })
-        }
+        },
     ))
 }
 
@@ -39,7 +43,8 @@ fn extract_repr(ident: &Ident, attrs: &Vec<Attribute>) -> syn::Ident {
     match attrs.iter().find(|attr| attr.path == parse_quote!(repr)) {
         Some(attr) => attr.parse_args::<Ident>().ok(),
         None => None,
-    }.unwrap_or(Ident::new("i32", ident.span()))
+    }
+    .unwrap_or(Ident::new("i32", ident.span()))
 }
 
 fn extract_enum_meta(attrs: &Vec<Attribute>) -> Option<()> {

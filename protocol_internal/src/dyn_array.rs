@@ -5,7 +5,8 @@ pub struct DynArray;
 impl DynArray {
     #[inline(always)]
     pub fn calculate_len<T: ProtocolSupport>(value: &Vec<T>) -> usize {
-        value.iter()
+        value
+            .iter()
             .map(<T as ProtocolSupport>::calculate_len)
             .fold(0, |acc, x| acc + x)
     }
