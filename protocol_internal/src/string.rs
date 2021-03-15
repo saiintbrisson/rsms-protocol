@@ -2,7 +2,7 @@ use crate::{ProtocolSupport, RangeValidatedSupport, VarNum};
 
 impl ProtocolSupport for String {
     fn calculate_len(&self) -> usize {
-        VarNum::<i32>::calculate_len(self.len() as i32) + self.len()
+        VarNum::<i32>::calculate_len(&(self.len() as i32)) + self.len()
     }
 
     fn deserialize<R: std::io::Read>(src: &mut R) -> std::io::Result<Self> {
@@ -10,7 +10,7 @@ impl ProtocolSupport for String {
     }
 
     fn serialize<W: std::io::Write>(&self, dst: &mut W) -> std::io::Result<()> {
-        VarNum::<i32>::serialize(self.len() as i32, dst)?;
+        VarNum::<i32>::serialize(&(self.len() as i32), dst)?;
         dst.write(self.as_bytes()).map(|_| ())
     }
 }

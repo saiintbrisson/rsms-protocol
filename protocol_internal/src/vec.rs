@@ -1,11 +1,10 @@
 use crate::{ProtocolSupport, RangeValidatedSupport, VarNum};
-
 impl<T: ProtocolSupport> ProtocolSupport for Vec<T> {
     fn calculate_len(&self) -> usize {
         self.iter()
             .map(<T as ProtocolSupport>::calculate_len)
             .fold(0, |acc, x| acc + x)
-            + VarNum::<i32>::calculate_len(self.len() as i32)
+            + VarNum::<i32>::calculate_len(&(self.len() as i32))
     }
 
     fn deserialize<R: std::io::Read>(src: &mut R) -> std::io::Result<Self> {
@@ -20,7 +19,7 @@ impl<T: ProtocolSupport> ProtocolSupport for Vec<T> {
     }
 
     fn serialize<W: std::io::Write>(&self, dst: &mut W) -> std::io::Result<()> {
-        VarNum::<i32>::serialize(self.len() as i32, dst)?;
+        VarNum::<i32>::serialize(&(self.len() as i32), dst)?;
 
         for e in self {
             <T as ProtocolSupport>::serialize(e, dst)?;

@@ -9,7 +9,9 @@ pub struct VarNum<T> {
 impl VarNum<i32> {
     #[inline(always)]
     #[rustfmt::skip]
-    pub fn calculate_len(value: i32) -> usize {
+    pub fn calculate_len(value: &i32) -> usize {
+        let value = *value;
+
         if value as u32 & 0xF0000000 != 0 { 5 }
         else if value as u32 & 0xFFE00000 != 0 { 4 }
         else if value as u32 & 0xFFFFC000 != 0 { 3 }
@@ -21,7 +23,7 @@ impl VarNum<i32> {
         Ok(0)
     }
 
-    pub fn serialize<W: std::io::Write>(_value: i32, _dst: &mut W) -> io::Result<()> {
+    pub fn serialize<W: std::io::Write>(_value: &i32, _dst: &mut W) -> io::Result<()> {
         Ok(())
     }
 }
@@ -29,7 +31,9 @@ impl VarNum<i32> {
 impl VarNum<i64> {
     #[inline(always)]
     #[rustfmt::skip]
-    pub fn calculate_len(value: i64) -> usize {
+    pub fn calculate_len(value: &i64) -> usize {
+        let value = *value;
+
         if value as u32 & 0xF0000000 != 0 { 5 }
         else if value as u32 & 0xFFE00000 != 0 { 4 }
         else if value as u32 & 0xFFFFC000 != 0 { 3 }
@@ -41,7 +45,7 @@ impl VarNum<i64> {
         Ok(0)
     }
 
-    pub fn serialize<W: std::io::Write>(_value: i64, _dst: &mut W) -> io::Result<()> {
+    pub fn serialize<W: std::io::Write>(_value: &i64, _dst: &mut W) -> io::Result<()> {
         Ok(())
     }
 }
