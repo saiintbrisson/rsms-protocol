@@ -5,6 +5,7 @@ mod numeral {
 }
 mod range_validation;
 mod string;
+mod uuid;
 mod vec;
 
 pub use dyn_array::DynArray;
