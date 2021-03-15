@@ -4,7 +4,6 @@ pub struct DynArray;
 
 impl DynArray {
     #[inline(always)]
-    #[rustfmt::skip]
     pub fn calculate_len<T: ProtocolSupport>(value: &Vec<T>) -> usize {
         value.iter()
             .map(<T as ProtocolSupport>::calculate_len)
