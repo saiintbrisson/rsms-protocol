@@ -20,7 +20,7 @@ pub(crate) fn expand_enum(ident: &Ident, data_enum: &syn::DataEnum, attrs: &Vec<
     let path = if extract_enum_meta(attrs).is_some() {
         quote! { ::protocol_internal::VarNum::<#ty> }
     } else {
-        quote! { :protocol_internal::ProtocolSupport }
+        quote! { ::protocol_internal::ProtocolSupport }
     };
 
     Ok((
