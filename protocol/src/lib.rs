@@ -5,4 +5,5 @@ pub use protocol_internal::{DynArray, Packet, ProtocolSupport, RangeValidatedSup
 #[cfg(feature = "packets")]
 pub mod packets {
     pub mod handshake;
+    pub mod login;
 }
