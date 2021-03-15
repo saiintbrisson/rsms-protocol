@@ -1,0 +1,17 @@
+[package]
+name = "protocol_derive"
+version = "0.1.0"
+authors = ["Luiz Carlos Mourão Paes de Carvalho <luizcarlosmpc@gmail.com>"]
+edition = "2018"
+
+# See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
+
+[dependencies]
+protocol_internal = { path = "../protocol_internal" }
+
+proc-macro2 = "1.0.24"
+quote = "1.0.9"
+syn = { version = "1.0.63", features = ["extra-traits"] }
+
+[lib]
+proc-macro = true
