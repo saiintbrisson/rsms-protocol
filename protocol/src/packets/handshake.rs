@@ -16,6 +16,7 @@ pub enum NextState {
     Login = 2,
 }
 
+#[cfg(test)]
 mod test {
     use protocol_internal::ProtocolSupport;
 
