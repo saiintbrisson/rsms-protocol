@@ -6,4 +6,6 @@ pub use protocol_internal::{DynArray, Packet, ProtocolSupport, RangeValidatedSup
 pub mod packets {
     pub mod handshake;
     pub mod login;
+    pub mod play;
+    pub mod status;
 }

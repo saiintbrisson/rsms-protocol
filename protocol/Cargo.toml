@@ -10,6 +10,8 @@ edition = "2018"
 protocol_derive = { path = "../protocol_derive" }
 protocol_internal = { path = "../protocol_internal" }
 
+misc = { path = "../misc" }
+
 [features]
 default = ["derive", "packets"]
 
