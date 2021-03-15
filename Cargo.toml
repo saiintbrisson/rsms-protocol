@@ -1,2 +1,2 @@
 [workspace]
-members = ["protocol", "protocol_derive", "protocol_internal"]
+members = ["misc", "protocol", "protocol_derive", "protocol_internal"]
