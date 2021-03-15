@@ -21,7 +21,7 @@ mod test {
     use protocol_internal::ProtocolSupport;
 
     #[test]
-    fn test() {
+    fn test_handshake_len() {
         let handshake = super::Handshake {
             protocol_version: 47,
             server_address: "localhost".into(),
