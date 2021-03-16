@@ -1,5 +1,5 @@
 #[repr(u8)]
-#[derive(Copy, Clone, protocol_derive::ProtocolSupportDerive)]
+#[derive(Copy, Clone, protocol_derive::ProtocolSupport)]
 pub enum GameMode {
     Survival = 0,
     Creative = 1,
@@ -7,9 +7,8 @@ pub enum GameMode {
     Spectator = 3,
 }
 
-#[test]
-fn test() {
-    use protocol_internal::ProtocolSupport;
-    let game_mode = GameMode::Survival;
-    assert_eq!(game_mode.calculate_len(), 1);
+impl Default for GameMode {
+    fn default() -> Self {
+        Self::Survival
+    }
 }
