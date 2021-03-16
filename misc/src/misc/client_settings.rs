@@ -1,5 +1,5 @@
 #[repr(i8)]
-#[derive(Copy, Clone, Debug, protocol_derive::ProtocolSupport)]
+#[derive(Clone, Copy, Debug, protocol_derive::ProtocolSupport)]
 pub enum ChatMode {
     Enabled = 0,
     Commands = 1,

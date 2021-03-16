@@ -1,5 +1,5 @@
 #[repr(u8)]
-#[derive(Copy, Clone, Debug, protocol_derive::ProtocolSupport)]
+#[derive(Clone, Copy, Debug, protocol_derive::ProtocolSupport)]
 pub enum GameMode {
     Survival = 0,
     Creative = 1,
