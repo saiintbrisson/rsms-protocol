@@ -1,3 +1,5 @@
+use std::fmt::Display;
+
 #[derive(Debug, protocol_derive::ProtocolSupport)]
 #[packet(0x00)]
 pub struct Handshake {
@@ -15,6 +17,12 @@ pub struct Handshake {
 pub enum NextState {
     Status = 1,
     Login = 2,
+}
+
+impl Display for NextState {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        write!(f, "{}", &self)
+    }
 }
 
 #[cfg(test)]
