@@ -1,16 +1,16 @@
-#[derive(protocol_derive::ProtocolSupport)]
+#[derive(Debug, protocol_derive::ProtocolSupport)]
 #[packet(0x00)]
 pub struct Handshake {
     #[protocol_field(varnum)]
-    protocol_version: i32,
+    pub protocol_version: i32,
     #[protocol_field(range(max = 255))]
-    server_address: String,
-    server_port: u16,
-    next_state: NextState,
+    pub server_address: String,
+    pub server_port: u16,
+    pub next_state: NextState,
 }
 
 #[repr(i32)]
-#[derive(Clone, Copy, protocol_derive::ProtocolSupport)]
+#[derive(Debug, Clone, Copy, protocol_derive::ProtocolSupport)]
 #[protocol_field(varnum)]
 pub enum NextState {
     Status = 1,

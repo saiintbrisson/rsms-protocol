@@ -1,5 +1,5 @@
 #[repr(u8)]
-#[derive(Copy, Clone, protocol_derive::ProtocolSupport)]
+#[derive(Copy, Clone, Debug, protocol_derive::ProtocolSupport)]
 pub enum Difficulty {
     Peaceful = 0,
     Easy = 1,

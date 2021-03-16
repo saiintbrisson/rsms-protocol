@@ -2,16 +2,16 @@
 pub mod client_bound {
     use misc::prelude::{Difficulty, Dimension, GameMode};
 
-    #[derive(Default, protocol_derive::ProtocolSupport)]
+    #[derive(Debug, Default, protocol_derive::ProtocolSupport)]
     #[packet(0x01)]
     pub struct JoinGame {
-        entity_id: i32,
-        game_mode: GameMode,
-        dimension: Dimension,
-        difficulty: Difficulty,
-        max_players: u8,
-        level_type: String,
-        reduced_debug_info: bool,
+        pub entity_id: i32,
+        pub game_mode: GameMode,
+        pub dimension: Dimension,
+        pub difficulty: Difficulty,
+        pub max_players: u8,
+        pub level_type: String,
+        pub reduced_debug_info: bool,
     }
 }
 

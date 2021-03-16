@@ -15,7 +15,7 @@ pub use range_validation::RangeValidatedSupport;
 
 use std::io;
 
-pub trait Packet: ProtocolSupport {
+pub trait Packet: std::fmt::Debug + ProtocolSupport {
     fn calculate_len(&self) -> usize;
 
     fn serialize<W: io::Write>(&self, dst: &mut W) -> io::Result<()>;

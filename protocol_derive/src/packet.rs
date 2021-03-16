@@ -79,6 +79,8 @@ pub(crate) fn expand(attr: Vec<NestedMeta>, item: ItemMod) -> crate::Result {
 
     Ok(quote! {
         #m
+
+        #[derive(Debug)]
         pub enum #ident {
             #(#variants_ident(#mod_ident::#variants_ident)),*
         }
