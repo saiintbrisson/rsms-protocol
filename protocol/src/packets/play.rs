@@ -22,6 +22,12 @@ pub mod client_bound {
     }
 
     #[derive(Debug, Default, protocol_derive::ProtocolSupport)]
+    #[packet(0x05)]
+    pub struct SpawnPosition {
+        pub position: i64,
+    }
+
+    #[derive(Debug, Default, protocol_derive::ProtocolSupport)]
     #[packet(0x08)]
     pub struct PlayerPositionAndLook {
         pub entity_location: EntityLocation,
@@ -37,7 +43,7 @@ pub mod client_bound {
 
 #[protocol_derive::packets("ServerBound")]
 pub mod server_bound {
-    use misc::prelude::{ChatMode, EntityLocation, Vec3D};
+    use misc::prelude::{ChatMode, EntityLocation, Vec2D, Vec3D};
 
     #[derive(Debug, Default, protocol_derive::ProtocolSupport)]
     #[packet(0x00)]
@@ -47,9 +53,22 @@ pub mod server_bound {
     }
 
     #[derive(Debug, Default, protocol_derive::ProtocolSupport)]
+    #[packet(0x03)]
+    pub struct Player {
+        pub on_ground: bool,
+    }
+
+    #[derive(Debug, Default, protocol_derive::ProtocolSupport)]
     #[packet(0x04)]
     pub struct PlayerPosition {
         pub position: Vec3D<f64>,
+        pub on_ground: bool,
+    }
+
+    #[derive(Debug, Default, protocol_derive::ProtocolSupport)]
+    #[packet(0x05)]
+    pub struct PlayerLook {
+        pub look: Vec2D<f32>,
         pub on_ground: bool,
     }
 
