@@ -53,6 +53,13 @@ pub mod server_bound {
     }
 
     #[derive(Debug, Default, protocol_derive::ProtocolSupport)]
+    #[packet(0x01)]
+    pub struct ChatMessage {
+        #[protocol_field(range(min = 1, max = 100))]
+        pub message: String,
+    }
+
+    #[derive(Debug, Default, protocol_derive::ProtocolSupport)]
     #[packet(0x03)]
     pub struct Player {
         pub on_ground: bool,

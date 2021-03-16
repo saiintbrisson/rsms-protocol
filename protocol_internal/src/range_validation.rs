@@ -26,7 +26,7 @@ macro_rules! impl_range_validated_numeral {
                 if max != 0 && value > max as $n {
                     return Err(std::io::Error::new(
                         std::io::ErrorKind::InvalidInput,
-                        format!("number is bigger than max {}", min),
+                        format!("number is bigger than max {}", max),
                     ));
                 }
 
@@ -54,7 +54,7 @@ macro_rules! impl_range_validated_numeral {
                 if max != 0 && value > max as $n {
                     return Err(std::io::Error::new(
                         std::io::ErrorKind::InvalidInput,
-                        format!("number is bigger than max {}", min),
+                        format!("number is bigger than max {}", max),
                     ));
                 }
 
