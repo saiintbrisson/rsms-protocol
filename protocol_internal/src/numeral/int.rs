@@ -12,7 +12,7 @@ macro_rules! impl_numeral {
             fn serialize<W: std::io::Write>(&self, dst: &mut W) -> std::io::Result<()> {
                 dst.$w(*self)
             }
-            
+
             fn deserialize<R: std::io::Read>(src: &mut R) -> std::io::Result<$n> {
                 src.$r()
             }
@@ -46,6 +46,9 @@ impl_numeral!(i64, 8, read_i64, write_i64);
 impl_numeral!(u128, 6, read_u128, write_u128);
 impl_numeral!(i128, 16, read_i128, write_i128);
 
+impl_numeral!(f32, 4, read_f32, write_f32);
+impl_numeral!(f64, 8, read_f64, write_f64);
+
 impl_range_validated_numeral!(u8);
 impl_range_validated_numeral!(i8);
 impl_range_validated_numeral!(u16);
@@ -56,3 +59,6 @@ impl_range_validated_numeral!(u64);
 impl_range_validated_numeral!(i64);
 impl_range_validated_numeral!(u128);
 impl_range_validated_numeral!(i128);
+
+impl_range_validated_numeral!(f32);
+impl_range_validated_numeral!(f64);
