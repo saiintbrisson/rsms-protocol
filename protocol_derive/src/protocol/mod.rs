@@ -17,21 +17,21 @@ pub(crate) fn expand(
 ) -> crate::Result {
     let mut output = TokenStream::new();
     let (impl_generics, ty_generics, where_clause) = generics.split_for_impl();
-    
+
     let (calc_len, ser, de) = match &data {
         syn::Data::Struct(data_struct) => {
             let str = protocol_struct::expand_struct(data_struct, attrs)?;
             if let Some((calc_len, ser, de)) = str.packet {
-                output.append_all(quote! { 
+                output.append_all(quote! {
                     impl #impl_generics ::protocol_internal::Packet for #ident #ty_generics #where_clause {
                         fn calculate_len(&self) -> usize {
                             #calc_len
                         }
-            
+
                         fn serialize<W: std::io::Write>(&self, mut dst: &mut W) -> std::io::Result<()> {
                             #ser
                         }
-            
+
                         fn deserialize<R: std::io::Read>(mut src: &mut R) -> std::io::Result<Self> {
                             #de
                         }
@@ -40,12 +40,12 @@ pub(crate) fn expand(
             }
 
             str.protocol_support
-        },
+        }
         syn::Data::Enum(data_enum) => protocol_enum::expand_enum(ident, &data_enum, attrs)?,
         _ => {
             return Err(syn::Error::new(
                 ident.span(),
-                "ProtocolSupportDerive expected struct or enum",
+                "ProtocolSupport expected struct or enum",
             ))
         }
     };

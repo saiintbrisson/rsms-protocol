@@ -9,37 +9,40 @@ pub struct Struct {
     pub packet: Option<(TokenStream, TokenStream, TokenStream)>,
 }
 
-pub(crate) fn expand_struct(data_struct: &syn::DataStruct, attrs: &Vec<Attribute>) -> crate::Result<Struct> {
+pub(crate) fn expand_struct(
+    data_struct: &syn::DataStruct,
+    attrs: &Vec<Attribute>,
+) -> crate::Result<Struct> {
     let id = match attrs.iter().find(|attr| attr.path == parse_quote!(packet)) {
         Some(attr) => match attr.parse_meta()? {
             syn::Meta::List(meta) => match meta.nested.into_iter().collect::<Vec<_>>().first() {
                 Some(syn::NestedMeta::Lit(syn::Lit::Int(id))) => match id.base10_parse::<i32>() {
                     Ok(id) => Some(id),
-                    _ => return Err(Error::new_spanned(attr, "packet expected id"))
+                    _ => return Err(Error::new_spanned(attr, "packet expected id")),
                 },
-                _ => return Err(Error::new_spanned(attr, "packet expected id"))
+                _ => return Err(Error::new_spanned(attr, "packet expected id")),
             },
-            _ => return Err(Error::new_spanned(attr, "packet expected id"))
+            _ => return Err(Error::new_spanned(attr, "packet expected id")),
         },
         _ => None,
     };
 
     match &data_struct.fields {
         syn::Fields::Named(named) => parse_fields(&named, id),
-        syn::Fields::Unit => {
-            Ok(Struct {
-                protocol_support: (quote! { 0 }, quote! { Ok(()) }, quote! { Ok(Self) }),
-                packet: id.map(|id| (
-                    quote! { ::protocol_internal::VarNum::<i32>::calculate_len(&#id) }, 
-                    quote! { ::protocol_internal::VarNum::<i32>::serialize(&#id, dst) }, 
-                    quote! { ::protocol_internal::VarNum::<i32>::deserialize(src)?; }
-                )),
-            })
-        },
+        syn::Fields::Unit => Ok(Struct {
+            protocol_support: (quote! { 0 }, quote! { Ok(()) }, quote! { Ok(Self) }),
+            packet: id.map(|id| {
+                (
+                    quote! { ::protocol_internal::VarNum::<i32>::calculate_len(&#id) },
+                    quote! { ::protocol_internal::VarNum::<i32>::serialize(&#id, dst) },
+                    quote! { ::protocol_internal::VarNum::<i32>::deserialize(src)?; Ok(Self) },
+                )
+            }),
+        }),
         _ => {
             return Err(syn::Error::new(
                 data_struct.fields.span(),
-                "ProtocolSupportDerive expected named fields",
+                "ProtocolSupport expected named fields",
             ))
         }
     }
@@ -51,22 +54,16 @@ fn parse_fields(FieldsNamed { named, .. }: &FieldsNamed, id: Option<i32>) -> cra
         fields.push(parse_field(field)?);
     }
 
-    let v_calc_len = fields
-        .iter()
-        .map(PacketField::calculate_len);
+    let v_calc_len = fields.iter().map(PacketField::calculate_len);
     let calc_len = quote! { 0 #(+ #v_calc_len)* };
 
-    let v_serialize = fields
-        .iter()
-        .map(PacketField::serialize);
+    let v_serialize = fields.iter().map(PacketField::serialize);
     let ser = quote! {
         #(#v_serialize)*
         Ok(())
     };
 
-    let v_deserialize = fields
-        .iter()
-        .map(PacketField::deserialize);
+    let v_deserialize = fields.iter().map(PacketField::deserialize);
     let de = quote! {
         Ok(Self {
             #(#v_deserialize)*
@@ -77,12 +74,12 @@ fn parse_fields(FieldsNamed { named, .. }: &FieldsNamed, id: Option<i32>) -> cra
         protocol_support: (calc_len, ser, de),
         packet: id.map(|id| (
             quote! {
-                ::protocol_internal::VarNum::<i32>::calculate_len(&#id) + ::protocol_internal::ProtocolSupport::calculate_len(self) 
-            }, 
+                ::protocol_internal::VarNum::<i32>::calculate_len(&#id) + ::protocol_internal::ProtocolSupport::calculate_len(self)
+            },
             quote! {
                 ::protocol_internal::VarNum::<i32>::serialize(&#id, dst)?;
                 ::protocol_internal::ProtocolSupport::serialize(self, dst)
-            }, 
+            },
             quote! {
                 let id = ::protocol_internal::VarNum::<i32>::deserialize(src)?;
                 if id != #id {
@@ -98,7 +95,7 @@ fn parse_fields(FieldsNamed { named, .. }: &FieldsNamed, id: Option<i32>) -> cra
 fn parse_field(field: &Field) -> crate::Result<super::field::PacketField> {
     let ident = &field.ident.as_ref().ok_or(Error::new(
         field.span(),
-        "ProtocolSupportDerive expected named field",
+        "ProtocolSupport expected named field",
     ))?;
 
     let path = match &field.ty {
@@ -106,7 +103,7 @@ fn parse_field(field: &Field) -> crate::Result<super::field::PacketField> {
         _ => {
             return Err(syn::Error::new(
                 field.span(),
-                "ProtocolSupportDerive expected type path",
+                "ProtocolSupport expected type path",
             ))
         }
     };
@@ -142,7 +139,7 @@ fn parse_field_meta(attr: &Attribute) -> Result<(Option<FieldValidator>, bool, b
         _ => {
             return Err(syn::Error::new(
                 attr.span(),
-                "ProtocolSupportDerive expected attribute parameters",
+                "ProtocolSupport expected attribute parameters",
             ))
         }
     };
@@ -156,7 +153,7 @@ fn parse_field_meta(attr: &Attribute) -> Result<(Option<FieldValidator>, bool, b
             _ => {
                 return Err(syn::Error::new(
                     attr.span(),
-                    "ProtocolSupportDerive expected attribute meta",
+                    "ProtocolSupport expected attribute meta",
                 ))
             }
         };
@@ -167,7 +164,7 @@ fn parse_field_meta(attr: &Attribute) -> Result<(Option<FieldValidator>, bool, b
                     .get_ident()
                     .ok_or(syn::Error::new(
                         attr.span(),
-                        "ProtocolSupportDerive expected attribute meta path ident",
+                        "ProtocolSupport expected attribute meta path ident",
                     ))?
                     .to_string()
                     .as_str()
@@ -183,7 +180,7 @@ fn parse_field_meta(attr: &Attribute) -> Result<(Option<FieldValidator>, bool, b
                     .get_ident()
                     .ok_or(syn::Error::new(
                         attr.span(),
-                        "ProtocolSupportDerive expected attribute meta path ident",
+                        "ProtocolSupport expected attribute meta path ident",
                     ))?
                     .to_string()
                     .as_str()
@@ -192,7 +189,7 @@ fn parse_field_meta(attr: &Attribute) -> Result<(Option<FieldValidator>, bool, b
                     path => {
                         return Err(syn::Error::new(
                             attr.span(),
-                            format!("ProtocolSupportDerive did not expect {}", path),
+                            format!("ProtocolSupport did not expect {}", path),
                         ))
                     }
                 }
@@ -218,7 +215,7 @@ fn extract_range(list: &MetaList) -> crate::Result<FieldValidator> {
                     _ => {
                         return Err(syn::Error::new(
                             list.span(),
-                            format!("ProtocolSupportDerive range expected int"),
+                            format!("ProtocolSupport range expected int"),
                         ))
                     }
                 }
@@ -229,7 +226,7 @@ fn extract_range(list: &MetaList) -> crate::Result<FieldValidator> {
                     .get_ident()
                     .ok_or(syn::Error::new(
                         list.span(),
-                        "ProtocolSupportDerive range expected meta path ident",
+                        "ProtocolSupport range expected meta path ident",
                     ))?
                     .to_string()
                     .as_str()
@@ -243,7 +240,7 @@ fn extract_range(list: &MetaList) -> crate::Result<FieldValidator> {
                     _ => {
                         return Err(syn::Error::new(
                             list.span(),
-                            format!("ProtocolSupportDerive range expected min/max"),
+                            format!("ProtocolSupport range expected min/max"),
                         ))
                     }
                 }
@@ -251,7 +248,7 @@ fn extract_range(list: &MetaList) -> crate::Result<FieldValidator> {
             _ => {
                 return Err(syn::Error::new(
                     list.span(),
-                    format!("ProtocolSupportDerive range expected meta"),
+                    format!("ProtocolSupport range expected meta"),
                 ))
             }
         }

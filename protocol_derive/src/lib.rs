@@ -14,7 +14,7 @@ type LSDResult = Result<(
     proc_macro2::TokenStream,
 )>;
 
-#[proc_macro_derive(ProtocolSupportDerive, attributes(protocol_field, packet))]
+#[proc_macro_derive(ProtocolSupport, attributes(protocol_field, packet))]
 pub fn derive_protocol_support(input: TokenStream) -> TokenStream {
     let mut derive_input = parse_macro_input!(input as DeriveInput);
 

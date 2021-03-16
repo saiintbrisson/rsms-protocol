@@ -1,4 +1,4 @@
-#[derive(protocol_derive::ProtocolSupportDerive)]
+#[derive(protocol_derive::ProtocolSupport)]
 #[packet(0x00)]
 pub struct Handshake {
     #[protocol_field(varnum)]
@@ -10,7 +10,7 @@ pub struct Handshake {
 }
 
 #[repr(i32)]
-#[derive(Clone, Copy, protocol_derive::ProtocolSupportDerive)]
+#[derive(Clone, Copy, protocol_derive::ProtocolSupport)]
 #[protocol_field(varnum)]
 pub enum NextState {
     Status = 1,

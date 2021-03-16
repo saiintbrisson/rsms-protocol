@@ -1,5 +1,5 @@
 #[cfg(feature = "derive")]
-pub use protocol_derive::ProtocolSupportDerive;
+pub use protocol_derive::{packets, ProtocolSupport};
 pub use protocol_internal::{DynArray, Packet, ProtocolSupport, RangeValidatedSupport, VarNum};
 
 #[cfg(feature = "packets")]

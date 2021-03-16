@@ -1,11 +1,11 @@
-#[derive(protocol_derive::ProtocolSupportDerive)]
+#[derive(protocol_derive::ProtocolSupport)]
 #[packet(0x00)]
 pub struct LoginStart {
     #[protocol_field(range(min = 1, max = 16))]
     username: String,
 }
 
-#[derive(protocol_derive::ProtocolSupportDerive)]
+#[derive(protocol_derive::ProtocolSupport)]
 #[packet(0x01)]
 pub struct EncryptionRequest {
     server_id: String,
@@ -13,20 +13,20 @@ pub struct EncryptionRequest {
     verify_token: Vec<u8>,
 }
 
-#[derive(protocol_derive::ProtocolSupportDerive)]
+#[derive(protocol_derive::ProtocolSupport)]
 #[packet(0x00)]
 pub struct Disconnect {
     reason: String,
 }
 
-#[derive(protocol_derive::ProtocolSupportDerive)]
+#[derive(protocol_derive::ProtocolSupport)]
 #[packet(0x01)]
 pub struct EncryptionResponse {
     shared_secret: Vec<u8>,
     verify_token: Vec<u8>,
 }
 
-#[derive(protocol_derive::ProtocolSupportDerive)]
+#[derive(protocol_derive::ProtocolSupport)]
 #[packet(0x02)]
 pub struct LoginSuccess {
     #[protocol_field(range(eq = 36))]
@@ -35,7 +35,7 @@ pub struct LoginSuccess {
     username: String,
 }
 
-#[derive(protocol_derive::ProtocolSupportDerive)]
+#[derive(protocol_derive::ProtocolSupport)]
 #[packet(0x03)]
 pub struct SetCompression {
     #[protocol_field(varnum)]
