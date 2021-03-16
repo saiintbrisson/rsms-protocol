@@ -9,12 +9,12 @@ macro_rules! impl_numeral {
                 1
             }
 
-            fn deserialize<R: std::io::Read>(src: &mut R) -> std::io::Result<$n> {
-                src.$r()
-            }
-
             fn serialize<W: std::io::Write>(&self, dst: &mut W) -> std::io::Result<()> {
                 dst.$w(*self)
+            }
+            
+            fn deserialize<R: std::io::Read>(src: &mut R) -> std::io::Result<$n> {
+                src.$r()
             }
         }
     };
@@ -24,12 +24,12 @@ macro_rules! impl_numeral {
                 $s
             }
 
-            fn deserialize<R: std::io::Read>(src: &mut R) -> std::io::Result<$n> {
-                src.$r::<BigEndian>()
-            }
-
             fn serialize<W: std::io::Write>(&self, dst: &mut W) -> std::io::Result<()> {
                 dst.$w::<BigEndian>(*self)
+            }
+
+            fn deserialize<R: std::io::Read>(src: &mut R) -> std::io::Result<$n> {
+                src.$r::<BigEndian>()
             }
         }
     };
