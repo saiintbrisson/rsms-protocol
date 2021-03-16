@@ -15,11 +15,16 @@ pub use range_validation::RangeValidatedSupport;
 
 use std::io;
 
-pub trait Packet: ProtocolSupport {}
+pub trait Packet: ProtocolSupport {
+    fn calculate_len(&self) -> usize;
+
+    fn serialize<W: io::Write>(&self, dst: &mut W) -> io::Result<()>;
+    fn deserialize<R: io::Read>(src: &mut R) -> io::Result<Self>;
+}
 
 pub trait ProtocolSupport: Sized {
     fn calculate_len(&self) -> usize;
 
-    fn deserialize<R: io::Read>(src: &mut R) -> io::Result<Self>;
     fn serialize<W: io::Write>(&self, dst: &mut W) -> io::Result<()>;
+    fn deserialize<R: io::Read>(src: &mut R) -> io::Result<Self>;
 }
