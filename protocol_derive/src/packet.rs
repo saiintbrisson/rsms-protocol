@@ -119,7 +119,7 @@ pub(crate) fn expand(attr: Vec<NestedMeta>, item: ItemMod) -> crate::Result {
             fn deserialize<R: std::io::Read>(mut src: &mut R) -> std::io::Result<Self> {
                 match ::protocol_internal::VarNum::<i32>::deserialize(src)? {
                     #(#variants_packet_de),*,
-                    id => Err(std::io::Error::new(std::io::ErrorKind::InvalidInput, format!("invalid packet id {}", id)))
+                    id => Err(std::io::Error::new(std::io::ErrorKind::NotFound, format!("invalid packet id {}", id)))
                 }
             }
         }

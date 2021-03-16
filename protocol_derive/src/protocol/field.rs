@@ -18,7 +18,7 @@ impl<'a> PacketField<'a> {
             if self.is_dynarray {
                 quote! { ::protocol_internal::DynArray }
             } else {
-                quote! { ::protocol_internal::ProtocolSupport }
+                quote! { <#ty as ::protocol_internal::ProtocolSupport> }
             }
         }
     }
