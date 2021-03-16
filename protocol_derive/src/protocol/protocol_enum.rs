@@ -24,8 +24,10 @@ pub(crate) fn expand_enum(
     let path = if extract_enum_meta(attrs).is_some() {
         quote! { ::protocol_internal::VarNum::<#ty> }
     } else {
-        quote! { ::protocol_internal::ProtocolSupport }
+        quote! { <#ty as ::protocol_internal::ProtocolSupport> }
     };
+
+    let stringified = ident.to_string();
 
     Ok((
         quote! { #path::calculate_len(&(*self as #ty)) },
@@ -33,7 +35,7 @@ pub(crate) fn expand_enum(
         quote! {
             Ok(match #path::deserialize(src)? {
                 #(#variants)*
-                next_state => return Err(std::io::Error::new(std::io::ErrorKind::InvalidInput, format!("did not expect next state {}", next_state)))
+                next_state => return Err(std::io::Error::new(std::io::ErrorKind::InvalidInput, format!("did not expect {} {}", #stringified, next_state)))
             })
         },
     ))
