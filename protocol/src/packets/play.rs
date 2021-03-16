@@ -1,7 +1,7 @@
 #[protocol_derive::packets("ClientBound")]
 pub mod client_bound {
-    use misc::prelude::{Difficulty, Dimension, GameMode};
-    
+    use misc::prelude::{Difficulty, Dimension, EntityLocation, GameMode};
+
     #[derive(Debug, Default, protocol_derive::ProtocolSupport)]
     #[packet(0x00)]
     pub struct KeepAlive {
@@ -22,6 +22,13 @@ pub mod client_bound {
     }
 
     #[derive(Debug, Default, protocol_derive::ProtocolSupport)]
+    #[packet(0x08)]
+    pub struct PlayerPositionAndLook {
+        pub entity_location: EntityLocation,
+        pub flags: u8,
+    }
+
+    #[derive(Debug, Default, protocol_derive::ProtocolSupport)]
     #[packet(0x40)]
     pub struct Disconnect {
         pub reason: String,
@@ -30,13 +37,27 @@ pub mod client_bound {
 
 #[protocol_derive::packets("ServerBound")]
 pub mod server_bound {
-    use misc::prelude::ChatMode;
+    use misc::prelude::{ChatMode, EntityLocation, Vec3D};
 
     #[derive(Debug, Default, protocol_derive::ProtocolSupport)]
     #[packet(0x00)]
     pub struct KeepAlive {
         #[protocol_field(varnum)]
         pub keep_alive_id: i32,
+    }
+
+    #[derive(Debug, Default, protocol_derive::ProtocolSupport)]
+    #[packet(0x04)]
+    pub struct PlayerPosition {
+        pub position: Vec3D<f64>,
+        pub on_ground: bool,
+    }
+
+    #[derive(Debug, Default, protocol_derive::ProtocolSupport)]
+    #[packet(0x06)]
+    pub struct PlayerPositionAndLook {
+        pub entity_location: EntityLocation,
+        pub on_ground: bool,
     }
 
     #[derive(Debug, Default, protocol_derive::ProtocolSupport)]
