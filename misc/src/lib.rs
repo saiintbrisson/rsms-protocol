@@ -8,6 +8,13 @@ pub mod misc {
 pub mod position {
     pub mod location;
     pub mod vector;
+
+    pub trait ToPosition {
+        fn to_position(&self) -> i64;
+    }
+    pub trait FromPosition {
+        fn from_position(position: i64) -> Self;
+    }
 }
 
 pub mod prelude {

@@ -1,3 +1,5 @@
+use super::ToPosition;
+
 #[derive(Clone, Debug, Default, protocol_derive::ProtocolSupport)]
 pub struct EntityLocation {
     pub x: f64,
@@ -15,6 +17,23 @@ impl EntityLocation {
             z,
             yaw,
             pitch,
+        }
+    }
+}
+
+impl ToPosition for EntityLocation {
+    fn to_position(&self) -> i64 {
+        ((self.x as i64) << 38) | ((self.z as i64 & 0x3FFFFFF) << 12) | (self.y as i64 & 0xFFF)
+    }
+}
+
+impl From<i64> for EntityLocation {
+    fn from(position: i64) -> Self {
+        Self {
+            x: (position >> 38) as f64,
+            y: (position & 0xFFF) as f64,
+            z: (position << 26 >> 38) as f64,
+            ..Default::default()
         }
     }
 }
