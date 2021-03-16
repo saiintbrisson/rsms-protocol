@@ -1,4 +1,5 @@
 #[derive(protocol_derive::ProtocolSupportDerive)]
+#[packet(0x00)]
 pub struct Handshake {
     #[protocol_field(varnum)]
     protocol_version: i32,
@@ -9,8 +10,8 @@ pub struct Handshake {
 }
 
 #[repr(i32)]
-#[protocol_field(varnum)]
 #[derive(Clone, Copy, protocol_derive::ProtocolSupportDerive)]
+#[protocol_field(varnum)]
 pub enum NextState {
     Status = 1,
     Login = 2,
@@ -18,7 +19,7 @@ pub enum NextState {
 
 #[cfg(test)]
 mod test {
-    use protocol_internal::ProtocolSupport;
+    use protocol_internal::{Packet, ProtocolSupport};
 
     #[test]
     fn test_handshake_len() {
@@ -29,6 +30,7 @@ mod test {
             next_state: super::NextState::Status,
         };
 
-        assert_eq!(handshake.calculate_len(), 14)
+        assert_eq!(ProtocolSupport::calculate_len(&handshake), 14);
+        assert_eq!(Packet::calculate_len(&handshake), 15);
     }
 }
