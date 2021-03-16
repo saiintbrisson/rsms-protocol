@@ -12,9 +12,6 @@ pub mod position {
     pub trait ToPosition {
         fn to_position(&self) -> i64;
     }
-    pub trait FromPosition {
-        fn from_position(position: i64) -> Self;
-    }
 }
 
 pub mod prelude {
