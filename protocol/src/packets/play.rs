@@ -1,6 +1,6 @@
 #[protocol_derive::packets("ClientBound")]
 pub mod client_bound {
-    use misc::prelude::{Difficulty, Dimension, EntityLocation, GameMode};
+    use misc::prelude::{BlockPosition, ChunkPosition, Difficulty, Dimension, EntityLocation, GameMode};
 
     #[derive(Debug, Default, protocol_derive::ProtocolSupport)]
     #[packet(0x00)]
@@ -24,7 +24,8 @@ pub mod client_bound {
     #[derive(Debug, Default, protocol_derive::ProtocolSupport)]
     #[packet(0x05)]
     pub struct SpawnPosition {
-        pub position: i64,
+        #[protocol_field(position)]
+        pub location: EntityLocation,
     }
 
     #[derive(Debug, Default, protocol_derive::ProtocolSupport)]
@@ -32,6 +33,50 @@ pub mod client_bound {
     pub struct PlayerPositionAndLook {
         pub entity_location: EntityLocation,
         pub flags: u8,
+    }
+
+    #[derive(Debug, Default, protocol_derive::ProtocolSupport)]
+    #[packet(0x22)]
+    pub struct MultiBlockChange {
+        pub chunk: ChunkPosition,
+        pub records: Vec<MultiBlockChangeRecord>,
+    }
+
+    #[derive(Debug, Default, protocol_derive::ProtocolSupport)]
+    pub struct MultiBlockChangeRecord {
+        pub horizontal_position: u8,
+        pub y_coordinate: u8,
+        #[protocol_field(varnum)]
+        pub block_id: i32,
+    }
+
+    #[derive(Debug, Default, protocol_derive::ProtocolSupport)]
+    #[packet(0x23)]
+    pub struct BlockChange {
+        #[protocol_field(position)]
+        pub location: BlockPosition,
+        #[protocol_field(varnum)]
+        pub block_id: i32,
+    }
+    
+    #[derive(Debug, Default, protocol_derive::ProtocolSupport)]
+    #[packet(0x24)]
+    pub struct BlockAction {
+        #[protocol_field(position)]
+        pub location: BlockPosition,
+        pub extra: u16,
+        #[protocol_field(varnum)]
+        pub block_type: i32,
+    }
+    
+    #[derive(Debug, Default, protocol_derive::ProtocolSupport)]
+    #[packet(0x25)]
+    pub struct BlockBreakAnimation {
+        #[protocol_field(varnum)]
+        pub entity_id: i32,
+        #[protocol_field(position)]
+        pub location: BlockPosition,
+        pub destroy_stage: i8,
     }
 
     #[derive(Debug, Default, protocol_derive::ProtocolSupport)]
@@ -87,6 +132,14 @@ pub mod server_bound {
     }
 
     #[derive(Debug, Default, protocol_derive::ProtocolSupport)]
+    #[packet(0x10)]
+    pub struct CreativeInventoryAction {
+        pub slot: i16,
+        #[protocol_field(dynarray)]
+        pub clicked_item: Vec<u8>,
+    }
+
+    #[derive(Debug, Default, protocol_derive::ProtocolSupport)]
     #[packet(0x15)]
     pub struct ClientSettings {
         pub locale: String,
@@ -94,6 +147,14 @@ pub mod server_bound {
         pub chat_mode: ChatMode,
         pub chat_colors: bool,
         pub displayed_skin_parts: u8,
+    }
+
+    #[derive(Debug, Default, protocol_derive::ProtocolSupport)]
+    #[packet(0x17)]
+    pub struct PluginMessage {
+        pub channel: String,
+        #[protocol_field(dynarray)]
+        pub data: Vec<u8>,
     }
 }
 
