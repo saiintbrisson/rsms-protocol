@@ -8,10 +8,6 @@ pub mod misc {
 pub mod position {
     pub mod location;
     pub mod vector;
-
-    pub trait ToPosition {
-        fn to_position(&self) -> i64;
-    }
 }
 
 pub mod prelude {
@@ -22,6 +18,6 @@ pub mod prelude {
 
     pub use crate::position::{
         location::EntityLocation,
-        vector::{Vec2D, Vec3D},
+        vector::{BlockPosition, ChunkPosition, Vec2D, Vec3D},
     };
 }

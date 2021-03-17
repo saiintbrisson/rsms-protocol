@@ -1,4 +1,6 @@
-use protocol_internal::ProtocolSupport;
+use protocol_internal::{ProtocolPosition, ProtocolSupport};
+
+pub type ChunkPosition = Vec2D<i32>;
 
 #[derive(Clone, Debug, Default)]
 pub struct Vec2D<T>
@@ -48,6 +50,8 @@ where
     }
 }
 
+pub type BlockPosition = Vec3D<i32>;
+
 #[derive(Clone, Debug, Default)]
 pub struct Vec3D<T>
 where
@@ -96,5 +100,18 @@ where
             y: T::deserialize(src)?,
             z: T::deserialize(src)?,
         })
+    }
+}
+
+impl ProtocolPosition for Vec3D<i32> {
+    fn to_position(&self) -> i64 {
+        ((self.x as i64) << 38) | ((self.z as i64 & 0x3FFFFFF) << 12) | (self.y as i64 & 0xFFF)
+    }
+    fn from_position(position: i64) -> Self {
+        Self {
+            x: (position >> 38) as i32,
+            y: (position & 0xFFF) as i32,
+            z: (position << 26 >> 38) as i32,
+        }
     }
 }
