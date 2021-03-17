@@ -2,7 +2,7 @@ use proc_macro2::TokenStream;
 use quote::{quote, ToTokens};
 use syn::{parse_quote, spanned::Spanned, Attribute, Error, Field, FieldsNamed, MetaList};
 
-use super::field::{FieldType, FieldValidator, PacketField};
+use super::field::{FieldType, FieldValidator, StructField};
 
 pub struct Struct {
     pub protocol_support: (TokenStream, TokenStream, TokenStream),
@@ -54,16 +54,16 @@ fn parse_fields(FieldsNamed { named, .. }: &FieldsNamed, id: Option<i32>) -> cra
         fields.push(parse_field(field)?);
     }
 
-    let v_calc_len = fields.iter().map(PacketField::calculate_len);
+    let v_calc_len = fields.iter().map(StructField::calculate_len);
     let calc_len = quote! { 0 #(+ #v_calc_len)* };
 
-    let v_serialize = fields.iter().map(PacketField::serialize);
+    let v_serialize = fields.iter().map(StructField::serialize);
     let ser = quote! {
         #(#v_serialize)*
         Ok(())
     };
 
-    let v_deserialize = fields.iter().map(PacketField::deserialize);
+    let v_deserialize = fields.iter().map(StructField::deserialize);
     let de = quote! {
         Ok(Self {
             #(#v_deserialize)*
@@ -92,7 +92,7 @@ fn parse_fields(FieldsNamed { named, .. }: &FieldsNamed, id: Option<i32>) -> cra
     })
 }
 
-fn parse_field(field: &Field) -> crate::Result<super::field::PacketField> {
+fn parse_field(field: &Field) -> crate::Result<super::field::StructField> {
     let ident = &field.ident.as_ref().ok_or(Error::new(
         field.span(),
         "ProtocolSupport expected named field",
@@ -114,7 +114,7 @@ fn parse_field(field: &Field) -> crate::Result<super::field::PacketField> {
         .find(|attr| attr.path == parse_quote!(protocol_field))
     {
         Some(attr) => attr,
-        None => return Ok(PacketField {
+        None => return Ok(StructField {
             ident,
             ty: path.path.to_token_stream(),
             protocol_type: FieldType::Default,
@@ -124,7 +124,7 @@ fn parse_field(field: &Field) -> crate::Result<super::field::PacketField> {
 
     let (validator, protocol_type) = parse_field_meta(attr)?;
 
-    Ok(PacketField {
+    Ok(StructField {
         ident,
         ty: path.path.to_token_stream(),
         protocol_type,
