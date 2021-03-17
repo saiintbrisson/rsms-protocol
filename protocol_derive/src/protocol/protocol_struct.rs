@@ -2,7 +2,7 @@ use proc_macro2::TokenStream;
 use quote::{quote, ToTokens};
 use syn::{parse_quote, spanned::Spanned, Attribute, Error, Field, FieldsNamed, MetaList};
 
-use super::field::{FieldValidator, PacketField};
+use super::field::{FieldType, FieldValidator, PacketField};
 
 pub struct Struct {
     pub protocol_support: (TokenStream, TokenStream, TokenStream),
@@ -108,32 +108,31 @@ fn parse_field(field: &Field) -> crate::Result<super::field::PacketField> {
         }
     };
 
-    let mut packet_field = PacketField {
-        ident,
-        ty: path.path.to_token_stream(),
-        is_varnum: false,
-        is_dynarray: false,
-        validator: None,
-    };
-
     let attr = match field
         .attrs
         .iter()
         .find(|attr| attr.path == parse_quote!(protocol_field))
     {
         Some(attr) => attr,
-        None => return Ok(packet_field),
+        None => return Ok(PacketField {
+            ident,
+            ty: path.path.to_token_stream(),
+            protocol_type: FieldType::Default,
+            validator: None,
+        }),
     };
 
-    let (validator, is_varnum, is_dynarray) = parse_field_meta(attr)?;
-    packet_field.validator = validator;
-    packet_field.is_varnum = is_varnum;
-    packet_field.is_dynarray = is_dynarray;
+    let (validator, protocol_type) = parse_field_meta(attr)?;
 
-    Ok(packet_field)
+    Ok(PacketField {
+        ident,
+        ty: path.path.to_token_stream(),
+        protocol_type,
+        validator,
+    })
 }
 
-fn parse_field_meta(attr: &Attribute) -> Result<(Option<FieldValidator>, bool, bool), Error> {
+fn parse_field_meta(attr: &Attribute) -> Result<(Option<FieldValidator>, FieldType), Error> {
     let meta_items = match attr.parse_meta()? {
         syn::Meta::List(list) => list.nested.into_iter().collect::<Vec<_>>(),
         _ => {
@@ -144,8 +143,7 @@ fn parse_field_meta(attr: &Attribute) -> Result<(Option<FieldValidator>, bool, b
         }
     };
 
-    let mut is_varnum = false;
-    let mut is_dynarray = false;
+    let mut protocol_type = FieldType::Default;
 
     for meta_item in meta_items {
         let meta = match meta_item {
@@ -169,8 +167,9 @@ fn parse_field_meta(attr: &Attribute) -> Result<(Option<FieldValidator>, bool, b
                     .to_string()
                     .as_str()
                 {
-                    "varnum" => is_varnum = true,
-                    "dynarray" => is_dynarray = true,
+                    "varnum" => protocol_type = FieldType::VarNum,
+                    "position" => protocol_type = FieldType::Position,
+                    "dynarray" => protocol_type = FieldType::DynArray,
                     _ => {}
                 }
             }
@@ -185,7 +184,7 @@ fn parse_field_meta(attr: &Attribute) -> Result<(Option<FieldValidator>, bool, b
                     .to_string()
                     .as_str()
                 {
-                    "range" => return Ok((Some(extract_range(&list)?), is_varnum, is_dynarray)),
+                    "range" => return Ok((Some(extract_range(&list)?), protocol_type)),
                     path => {
                         return Err(syn::Error::new(
                             attr.span(),
@@ -198,7 +197,7 @@ fn parse_field_meta(attr: &Attribute) -> Result<(Option<FieldValidator>, bool, b
         }
     }
 
-    Ok((None, is_varnum, is_dynarray))
+    Ok((None, protocol_type))
 }
 
 fn extract_range(list: &MetaList) -> crate::Result<FieldValidator> {
