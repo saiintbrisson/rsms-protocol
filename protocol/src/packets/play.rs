@@ -1,6 +1,8 @@
 #[protocol_derive::packets("ClientBound")]
 pub mod client_bound {
-    use misc::prelude::{BlockPosition, ChunkPosition, Difficulty, Dimension, EntityLocation, GameMode};
+    use misc::prelude::{
+        BlockPosition, ChunkPosition, Difficulty, Dimension, EntityLocation, GameMode,
+    };
 
     #[derive(Debug, Default, protocol_derive::ProtocolSupport)]
     #[packet(0x00)]
@@ -58,7 +60,7 @@ pub mod client_bound {
         #[protocol_field(varnum)]
         pub block_id: i32,
     }
-    
+
     #[derive(Debug, Default, protocol_derive::ProtocolSupport)]
     #[packet(0x24)]
     pub struct BlockAction {
@@ -68,7 +70,7 @@ pub mod client_bound {
         #[protocol_field(varnum)]
         pub block_type: i32,
     }
-    
+
     #[derive(Debug, Default, protocol_derive::ProtocolSupport)]
     #[packet(0x25)]
     pub struct BlockBreakAnimation {

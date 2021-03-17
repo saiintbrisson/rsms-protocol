@@ -4,11 +4,13 @@ use byteorder::{BigEndian, ReadBytesExt, WriteBytesExt};
 
 pub trait ProtocolPosition {
     fn to_position(&self) -> i64;
-    fn from_position(position: i64) -> Self where Self: Sized;
+    fn from_position(position: i64) -> Self
+    where
+        Self: Sized;
 }
 
 pub struct ProtocolPositionSupport<T> {
-    _data: PhantomData<T>
+    _data: PhantomData<T>,
 }
 
 impl<T: ProtocolPosition> ProtocolPositionSupport<T> {
@@ -23,6 +25,8 @@ impl<T: ProtocolPosition> ProtocolPositionSupport<T> {
     }
 
     pub fn deserialize<R: std::io::Read>(src: &mut R) -> std::io::Result<T> {
-        Ok(ProtocolPosition::from_position(src.read_i64::<BigEndian>()?))
+        Ok(ProtocolPosition::from_position(
+            src.read_i64::<BigEndian>()?,
+        ))
     }
 }

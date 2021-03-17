@@ -114,12 +114,14 @@ fn parse_field(field: &Field) -> crate::Result<super::field::StructField> {
         .find(|attr| attr.path == parse_quote!(protocol_field))
     {
         Some(attr) => attr,
-        None => return Ok(StructField {
-            ident,
-            ty: path.path.to_token_stream(),
-            protocol_type: FieldType::Default,
-            validator: None,
-        }),
+        None => {
+            return Ok(StructField {
+                ident,
+                ty: path.path.to_token_stream(),
+                protocol_type: FieldType::Default,
+                validator: None,
+            })
+        }
     };
 
     let (validator, protocol_type) = parse_field_meta(attr)?;

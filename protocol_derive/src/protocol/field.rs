@@ -44,14 +44,11 @@ pub(crate) enum FieldValidator {
 }
 
 impl FieldValidator {
-    pub fn deserialize(
-        &self,
-        path: &TokenStream,
-    ) -> proc_macro2::TokenStream {
+    pub fn deserialize(&self, path: &TokenStream) -> proc_macro2::TokenStream {
         match self {
             FieldValidator::Range { min, max } => quote! {
                 #path::deserialize(&mut src, #min, #max)
-            }
+            },
         }
     }
 }
@@ -76,8 +73,12 @@ impl FieldType {
 
     pub fn get_range_validator_path(&self, ty: &TokenStream) -> TokenStream {
         match self {
-            FieldType::VarNum => quote! { <::protocol_internal::VarNum<#ty> as ::protocol_internal::RangeValidatedSupport<#ty>> },
-            FieldType::DynArray => quote! { <::protocol_internal::DynArray as ::protocol_internal::RangeValidatedSupport<#ty>> },
+            FieldType::VarNum => {
+                quote! { <::protocol_internal::VarNum<#ty> as ::protocol_internal::RangeValidatedSupport<#ty>> }
+            }
+            FieldType::DynArray => {
+                quote! { <::protocol_internal::DynArray as ::protocol_internal::RangeValidatedSupport<#ty>> }
+            }
             FieldType::Default => quote! { <#ty as ::protocol_internal::RangeValidatedSupport> },
             _ => panic!(""),
         }
