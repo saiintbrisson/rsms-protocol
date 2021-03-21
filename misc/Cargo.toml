@@ -9,3 +9,11 @@ edition = "2018"
 [dependencies]
 protocol_derive = { path = "../protocol_derive" }
 protocol_internal = { path = "../protocol_internal" }
+
+serde = { version = "1.0.124", features = ["derive"], optional = true }
+serde_json = { version = "1.0.64", optional = true }
+
+[features]
+default = ["chat"]
+
+chat = ["serde", "serde_json"]
