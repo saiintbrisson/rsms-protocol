@@ -1,7 +1,8 @@
 #[protocol_derive::packets("ClientBound")]
 pub mod client_bound {
     use misc::prelude::{
-        BlockPosition, ChunkPosition, Difficulty, Dimension, EntityLocation, GameMode,
+        BlockPosition, ChatComponent, ChatPosition, ChunkPosition, Difficulty, Dimension,
+        EntityLocation, GameMode,
     };
 
     #[derive(Debug, Default, protocol_derive::ProtocolSupport)]
@@ -21,6 +22,13 @@ pub mod client_bound {
         pub max_players: u8,
         pub level_type: String,
         pub reduced_debug_info: bool,
+    }
+
+    #[derive(Debug, Default, protocol_derive::ProtocolSupport)]
+    #[packet(0x02)]
+    pub struct ChatMessage {
+        pub json_data: ChatComponent<'static>,
+        pub position: ChatPosition,
     }
 
     #[derive(Debug, Default, protocol_derive::ProtocolSupport)]
@@ -93,7 +101,7 @@ pub mod client_bound {
     #[derive(Debug, Default, protocol_derive::ProtocolSupport)]
     #[packet(0x40)]
     pub struct Disconnect {
-        pub reason: String,
+        pub reason: ChatComponent<'static>,
     }
 }
 

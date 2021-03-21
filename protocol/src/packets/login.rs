@@ -1,3 +1,5 @@
+use misc::misc::chat::ChatComponent;
+
 #[derive(Debug, protocol_derive::ProtocolSupport)]
 #[packet(0x00)]
 pub struct LoginStart {
@@ -16,7 +18,7 @@ pub struct EncryptionRequest {
 #[derive(Debug, protocol_derive::ProtocolSupport)]
 #[packet(0x00)]
 pub struct Disconnect {
-    pub reason: String,
+    pub reason: ChatComponent<'static>,
 }
 
 #[derive(Debug, protocol_derive::ProtocolSupport)]
