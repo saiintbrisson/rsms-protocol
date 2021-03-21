@@ -6,6 +6,7 @@ pub mod misc {
 }
 
 pub mod position {
+    pub mod cuboid;
     pub mod location;
     pub mod vector;
 }
@@ -17,6 +18,7 @@ pub mod prelude {
     };
 
     pub use crate::position::{
+        cuboid::{Cuboid, CuboidIter},
         location::EntityLocation,
         vector::{BlockPosition, ChunkPosition, Vec2D, Vec3D},
     };
