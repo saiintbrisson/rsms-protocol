@@ -1,8 +1,12 @@
+use std::{fmt::Display, str::FromStr};
+
 use protocol_internal::{ProtocolPosition, ProtocolSupport};
+
+use crate::prelude::Cuboid;
 
 pub type ChunkPosition = Vec2D<i32>;
 
-#[derive(Clone, Debug, Default)]
+#[derive(Clone, Debug, Default, PartialEq, PartialOrd, protocol_derive::ProtocolSupport)]
 pub struct Vec2D<T>
 where
     T: ProtocolSupport + PartialEq + PartialOrd,
@@ -29,30 +33,36 @@ where
     }
 }
 
-impl<T> ProtocolSupport for Vec2D<T>
-where
-    T: ProtocolSupport + PartialEq + PartialOrd,
+impl<T> ToString for Vec2D<T> 
+where 
+    T: ToString + ProtocolSupport + PartialEq + PartialOrd
 {
-    fn calculate_len(&self) -> usize {
-        self.x.calculate_len() + self.z.calculate_len()
+    fn to_string(&self) -> String {
+        format!("{};{}", self.x.to_string(), self.z.to_string())
     }
+}
 
-    fn serialize<W: std::io::Write>(&self, dst: &mut W) -> std::io::Result<()> {
-        self.x.serialize(dst)?;
-        self.z.serialize(dst)
-    }
+impl<T> FromStr for Vec2D<T>
+where 
+    T: FromStr + ProtocolSupport + PartialEq + PartialOrd
+{
+    type Err = Error<T::Err>;
 
-    fn deserialize<R: std::io::Read>(src: &mut R) -> std::io::Result<Self> {
-        Ok(Self {
-            x: T::deserialize(src)?,
-            z: T::deserialize(src)?,
-        })
+    fn from_str(s: &str) -> Result<Self, Self::Err> {
+        let mut split = s.split(';');
+        let x = T::from_str(split.next().ok_or(Error::MissingField("x"))?)?;
+        let z = T::from_str(split.next().ok_or(Error::MissingField("z"))?)?;
+        if split.next().is_some() {
+            return Err(Error::InvalidInput);
+        }
+
+        Ok(Self { x, z })
     }
 }
 
 pub type BlockPosition = Vec3D<i32>;
 
-#[derive(Clone, Debug, Default)]
+#[derive(Clone, Debug, Default, PartialEq, PartialOrd, protocol_derive::ProtocolSupport)]
 pub struct Vec3D<T>
 where
     T: ProtocolSupport + PartialEq + PartialOrd,
@@ -71,6 +81,12 @@ where
     }
 }
 
+impl Vec3D<i32> {
+    pub fn cuboid(self, other: Vec3D<i32>) -> Cuboid {
+        Cuboid::new(self, other)
+    }
+}
+
 impl<T> From<Vec2D<T>> for Vec3D<T>
 where
     T: ProtocolSupport + Default + PartialEq + PartialOrd,
@@ -80,32 +96,9 @@ where
     }
 }
 
-impl<T> ProtocolSupport for Vec3D<T>
-where
-    T: ProtocolSupport + PartialEq + PartialOrd,
-{
-    fn calculate_len(&self) -> usize {
-        self.x.calculate_len() + self.y.calculate_len() + self.z.calculate_len()
-    }
-
-    fn serialize<W: std::io::Write>(&self, dst: &mut W) -> std::io::Result<()> {
-        self.x.serialize(dst)?;
-        self.y.serialize(dst)?;
-        self.z.serialize(dst)
-    }
-
-    fn deserialize<R: std::io::Read>(src: &mut R) -> std::io::Result<Self> {
-        Ok(Self {
-            x: T::deserialize(src)?,
-            y: T::deserialize(src)?,
-            z: T::deserialize(src)?,
-        })
-    }
-}
-
 impl ProtocolPosition for Vec3D<i32> {
     fn to_position(&self) -> i64 {
-        ((self.x as i64) << 38) | ((self.z as i64 & 0x3FFFFFF) << 12) | (self.y as i64 & 0xFFF)
+        (((self.x as i64) << 12) | (self.y as i64 & 0xFFF) << 26) | (self.z as i64 & 0x3FFFFFF)
     }
     fn from_position(position: i64) -> Self {
         Self {
@@ -115,3 +108,56 @@ impl ProtocolPosition for Vec3D<i32> {
         }
     }
 }
+
+impl<T> ToString for Vec3D<T> 
+where 
+    T: ToString + ProtocolSupport + PartialEq + PartialOrd 
+{
+    fn to_string(&self) -> String {
+        format!("{};{};{}", self.x.to_string(), self.y.to_string(), self.z.to_string())
+    }
+}
+
+impl<T> FromStr for Vec3D<T>
+where 
+    T: FromStr + ProtocolSupport + PartialEq + PartialOrd
+{
+    type Err = Error<T::Err>;
+
+    fn from_str(s: &str) -> Result<Self, Self::Err> {
+        let mut split = s.split(';');
+        let x = T::from_str(split.next().ok_or(Error::MissingField("x"))?)?;
+        let y = T::from_str(split.next().ok_or(Error::MissingField("y"))?)?;
+        let z = T::from_str(split.next().ok_or(Error::MissingField("z"))?)?;
+        if split.next().is_some() {
+            return Err(Error::InvalidInput);
+        }
+
+        Ok(Self { x, y, z })
+    }
+}
+
+#[derive(Debug)]
+pub enum Error<E> {
+    MissingField(&'static str),
+    ParseError(E),
+    InvalidInput,
+}
+
+impl<E: Display> Display for Error<E> {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        match self {
+            Error::MissingField(field) => write!(f, "missing {} field", field),
+            Error::ParseError(err) => Display::fmt(err, f),
+            Error::InvalidInput => write!(f, "invalid input")
+        }
+    }
+}
+
+impl<E> From<E> for Error<E> {
+    fn from(err: E) -> Self {
+        Self::ParseError(err)
+    }
+}
+
+impl<T: std::error::Error> std::error::Error for Error<T> {}
