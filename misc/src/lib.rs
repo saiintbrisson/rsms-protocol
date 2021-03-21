@@ -1,4 +1,6 @@
 pub mod misc {
+    #[cfg(feature = "chat")]
+    pub mod chat;
     pub mod client_settings;
     pub mod difficulty;
     pub mod dimension;
@@ -13,7 +15,10 @@ pub mod position {
 
 pub mod prelude {
     pub use crate::misc::{
-        client_settings::ChatMode, difficulty::Difficulty, dimension::Dimension,
+        chat::{ChatColor, ChatComponent, ChatEvent, ChatPosition},
+        client_settings::ChatMode,
+        difficulty::Difficulty,
+        dimension::Dimension,
         game_mode::GameMode,
     };
 

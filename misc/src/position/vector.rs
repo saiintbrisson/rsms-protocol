@@ -33,9 +33,9 @@ where
     }
 }
 
-impl<T> ToString for Vec2D<T> 
-where 
-    T: ToString + ProtocolSupport + PartialEq + PartialOrd
+impl<T> ToString for Vec2D<T>
+where
+    T: ToString + ProtocolSupport + PartialEq + PartialOrd,
 {
     fn to_string(&self) -> String {
         format!("{};{}", self.x.to_string(), self.z.to_string())
@@ -43,8 +43,8 @@ where
 }
 
 impl<T> FromStr for Vec2D<T>
-where 
-    T: FromStr + ProtocolSupport + PartialEq + PartialOrd
+where
+    T: FromStr + ProtocolSupport + PartialEq + PartialOrd,
 {
     type Err = Error<T::Err>;
 
@@ -109,18 +109,23 @@ impl ProtocolPosition for Vec3D<i32> {
     }
 }
 
-impl<T> ToString for Vec3D<T> 
-where 
-    T: ToString + ProtocolSupport + PartialEq + PartialOrd 
+impl<T> ToString for Vec3D<T>
+where
+    T: ToString + ProtocolSupport + PartialEq + PartialOrd,
 {
     fn to_string(&self) -> String {
-        format!("{};{};{}", self.x.to_string(), self.y.to_string(), self.z.to_string())
+        format!(
+            "{};{};{}",
+            self.x.to_string(),
+            self.y.to_string(),
+            self.z.to_string()
+        )
     }
 }
 
 impl<T> FromStr for Vec3D<T>
-where 
-    T: FromStr + ProtocolSupport + PartialEq + PartialOrd
+where
+    T: FromStr + ProtocolSupport + PartialEq + PartialOrd,
 {
     type Err = Error<T::Err>;
 
@@ -149,7 +154,7 @@ impl<E: Display> Display for Error<E> {
         match self {
             Error::MissingField(field) => write!(f, "missing {} field", field),
             Error::ParseError(err) => Display::fmt(err, f),
-            Error::InvalidInput => write!(f, "invalid input")
+            Error::InvalidInput => write!(f, "invalid input"),
         }
     }
 }
