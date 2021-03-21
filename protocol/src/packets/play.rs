@@ -38,6 +38,15 @@ pub mod client_bound {
     }
 
     #[derive(Debug, Default, protocol_derive::ProtocolSupport)]
+    #[packet(0x21)]
+    pub struct ChunkData {
+        pub chunk: ChunkPosition,
+        pub ground_up_continuous: bool,
+        pub primary_bit_mask: u16,
+        pub data: Vec<u8>,
+    }
+
+    #[derive(Debug, Default, protocol_derive::ProtocolSupport)]
     #[packet(0x22)]
     pub struct MultiBlockChange {
         pub chunk: ChunkPosition,
