@@ -42,11 +42,8 @@ macro_rules! packet_enum {
         }
 
         impl $crate::ProtocolSupportDeserializer for $en {
-            fn deserialize<R: std::io::Read>(src: &mut R) -> std::io::Result<Self> {
-                match ::protocol_internal::VarNum::<i32>::deserialize(src)? {
-                    $($id => Ok(Self::$pn($crate::ProtocolSupportDeserializer::deserialize(src)?))),*,
-                    id => Err(std::io::Error::new(std::io::ErrorKind::NotFound, format!("invalid packet id {}", id)))
-                }
+            fn deserialize<R: std::io::Read>(_: &mut R) -> std::io::Result<Self> {
+                unimplemented!();
             }
         }
 
@@ -67,7 +64,7 @@ macro_rules! packet_enum {
         impl $crate::PacketDeserializer for $en {
             fn deserialize<R: std::io::Read>(src: &mut R) -> std::io::Result<Self> {
                 match ::protocol_internal::VarNum::<i32>::deserialize(src)? {
-                    $($id => Ok(Self::$pn($crate::PacketDeserializer::deserialize(src)?))),*,
+                    $($id => Ok(Self::$pn($crate::ProtocolSupportDeserializer::deserialize(src)?))),*,
                     id => Err(std::io::Error::new(std::io::ErrorKind::NotFound, format!("invalid packet id {}", id)))
                 }
             }
