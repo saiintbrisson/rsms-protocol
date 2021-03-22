@@ -7,6 +7,7 @@ mod numeral {
 }
 mod position;
 mod range_validation;
+mod regex;
 mod string;
 mod uuid;
 mod vec;
@@ -16,6 +17,7 @@ pub use fixed_vec::FixedVec;
 pub use numeral::varnum::VarNum;
 pub use position::{ProtocolPosition, ProtocolPositionSupport};
 pub use range_validation::RangeValidatedSupport;
+pub use crate::regex::Regex;
 
 use std::io;
 
