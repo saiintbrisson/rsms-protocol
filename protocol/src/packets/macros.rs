@@ -41,7 +41,7 @@ macro_rules! packet {
             fn calculate_len(&self) -> usize {
                 $crate::VarNum::<i32>::calculate_len(&$id) + $crate::ProtocolSupportSerializer::calculate_len(self)
             }
-        
+
             fn serialize<W: std::io::Write>(&self, dst: &mut W) -> std::io::Result<()> {
                 $crate::VarNum::<i32>::serialize(&$id, dst)?;
                 $crate::ProtocolSupportSerializer::serialize(self, dst)
@@ -54,7 +54,7 @@ macro_rules! packet {
                 if id != $id {
                     return Err(std::io::Error::new(std::io::ErrorKind::InvalidInput, format!("expected id {}, got {}", $id, id)));
                 }
-        
+
                 $crate::ProtocolSupportDeserializer::deserialize(src)
             }
         }

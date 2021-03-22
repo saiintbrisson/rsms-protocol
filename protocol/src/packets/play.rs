@@ -83,12 +83,12 @@ packet_enum!(client_bound, ClientBound =>
         };
         support {
             fn calculate_len(&self) -> usize {
-                1 
-                    + protocol_internal::VarNum::<i32>::calculate_len(&(self.meta.len() as i32)) 
+                1
+                    + protocol_internal::VarNum::<i32>::calculate_len(&(self.meta.len() as i32))
                     + protocol_internal::DynArray::calculate_len(&self.meta)
                     + protocol_internal::DynArray::calculate_len(&self.data)
             }
-        
+
             fn serialize<W: std::io::Write>(&self, dst: &mut W) -> std::io::Result<()> {
                 protocol_internal::ProtocolSupportSerializer::serialize(&self.sky_light_sent, dst)?;
                 protocol_internal::VarNum::<i32>::serialize(&(self.meta.len() as i32), dst)?;
@@ -99,10 +99,10 @@ packet_enum!(client_bound, ClientBound =>
             fn deserialize<R: std::io::Read>(src: &mut R) -> std::io::Result<Self> {
                 let sky_light_sent = protocol_internal::ProtocolSupportDeserializer::deserialize(src)?;
                 let len = protocol_internal::VarNum::<i32>::deserialize(src)? as usize;
-        
+
                 let meta = protocol_internal::FixedVec::deserialize(src, len)?;
                 let data = protocol_internal::FixedVec::deserialize(src, len)?;
-        
+
                 Ok(Self {
                     sky_light_sent,
                     meta,
