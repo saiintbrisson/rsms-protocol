@@ -26,7 +26,7 @@ impl<T: ProtocolSupportDeserializer> ProtocolSupportDeserializer for Vec<T> {
         let len = VarNum::<i32>::deserialize(src)? as usize;
 
         let mut buf = Vec::with_capacity(len);
-        for _ in 0..len {
+        while buf.len() < buf.capacity() {
             buf.push(<T as ProtocolSupportDeserializer>::deserialize(src)?);
         }
 
@@ -39,7 +39,7 @@ impl<T: ProtocolSupportDeserializer> RangeValidatedSupport for Vec<T> {
         let len = <VarNum<i32> as RangeValidatedSupport<i32>>::deserialize(src, min, max)? as usize;
 
         let mut buf = Vec::with_capacity(len);
-        for _ in 0..len {
+        while buf.len() < buf.capacity() {
             buf.push(<T as ProtocolSupportDeserializer>::deserialize(src)?);
         }
 
