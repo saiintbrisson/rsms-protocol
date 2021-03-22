@@ -11,13 +11,13 @@ pub(crate) struct StructField<'a> {
 impl<'a> StructField<'a> {
     pub fn calculate_len(&self) -> TokenStream {
         let ident = &self.ident;
-        let path = self.protocol_type.get_path(&self.ty);
+        let path = self.protocol_type.get_path_ser(&self.ty);
         quote! { #path::calculate_len(&self.#ident) }
     }
 
     pub fn serialize(&self) -> TokenStream {
         let ident = &self.ident;
-        let path = self.protocol_type.get_path(&self.ty);
+        let path = self.protocol_type.get_path_ser(&self.ty);
         quote! { #path::serialize(&self.#ident, &mut dst)?; }
     }
 
@@ -28,7 +28,7 @@ impl<'a> StructField<'a> {
             let path = self.protocol_type.get_range_validator_path(&self.ty);
             validator.deserialize(&path)
         } else {
-            let path = self.protocol_type.get_path(&self.ty);
+            let path = self.protocol_type.get_path_de(&self.ty);
             quote! { #path::deserialize(&mut src) }
         };
 
@@ -62,12 +62,21 @@ pub enum FieldType {
 }
 
 impl FieldType {
-    pub fn get_path(&self, ty: &TokenStream) -> TokenStream {
+    pub fn get_path_ser(&self, ty: &TokenStream) -> TokenStream {
         match self {
             FieldType::VarNum => quote! { ::protocol_internal::VarNum::<#ty> },
             FieldType::Position => quote! { ::protocol_internal::ProtocolPositionSupport },
             FieldType::DynArray => quote! { ::protocol_internal::DynArray },
-            FieldType::Default => quote! { <#ty as ::protocol_internal::ProtocolSupport> },
+            FieldType::Default => quote! { <#ty as ::protocol_internal::ProtocolSupportSerializer> },
+        }
+    }
+
+    pub fn get_path_de(&self, ty: &TokenStream) -> TokenStream {
+        match self {
+            FieldType::VarNum => quote! { ::protocol_internal::VarNum::<#ty> },
+            FieldType::Position => quote! { ::protocol_internal::ProtocolPositionSupport },
+            FieldType::DynArray => quote! { ::protocol_internal::DynArray },
+            FieldType::Default => quote! { <#ty as ::protocol_internal::ProtocolSupportDeserializer> },
         }
     }
 

@@ -46,28 +46,28 @@ pub(crate) fn expand(attr: Vec<NestedMeta>, item: ItemMod) -> crate::Result {
     let variants_ident = variants.iter().map(|(ident, _)| ident);
     let variants_calc_len = variants.iter().map(|(ident, _)| {
         quote! {
-            Self::#ident(packet) => ::protocol_internal::ProtocolSupport::calculate_len(packet)
+            Self::#ident(packet) => ::protocol_internal::ProtocolSupportSerializer::calculate_len(packet)
         }
     });
     let variants_ser = variants.iter().map(|(ident, _)| {
         quote! {
-            Self::#ident(packet) => ::protocol_internal::ProtocolSupport::serialize(packet, dst)
+            Self::#ident(packet) => ::protocol_internal::ProtocolSupportSerializer::serialize(packet, dst)
         }
     });
 
     let variants_packet_calc_len = variants.iter().map(|(ident, _)| {
         quote! {
-            Self::#ident(packet) => ::protocol_internal::Packet::calculate_len(packet)
+            Self::#ident(packet) => ::protocol_internal::PacketSerializer::calculate_len(packet)
         }
     });
     let variants_packet_ser = variants.iter().map(|(ident, _)| {
         quote! {
-            Self::#ident(packet) => ::protocol_internal::Packet::serialize(packet, dst)
+            Self::#ident(packet) => ::protocol_internal::PacketSerializer::serialize(packet, dst)
         }
     });
     let variants_packet_de = variants.iter().map(|(ident, id)| {
         quote! {
-            #id => Ok(Self::#ident(::protocol_internal::ProtocolSupport::deserialize(src)?))
+            #id => Ok(Self::#ident(::protocol_internal::ProtocolSupportDeserializer::deserialize(src)?))
         }
     });
 
@@ -85,7 +85,7 @@ pub(crate) fn expand(attr: Vec<NestedMeta>, item: ItemMod) -> crate::Result {
             #(#variants_ident(#mod_ident::#variants_ident)),*
         }
 
-        impl ::protocol_internal::ProtocolSupport for #ident {
+        impl ::protocol_internal::ProtocolSupportSerializer for #ident {
             fn calculate_len(&self) -> usize {
                 match self {
                     #(#variants_calc_len),*
@@ -97,13 +97,15 @@ pub(crate) fn expand(attr: Vec<NestedMeta>, item: ItemMod) -> crate::Result {
                     #(#variants_ser?),*
                 })
             }
-
+        }
+        
+        impl ::protocol_internal::ProtocolSupportDeserializer for #ident {
             fn deserialize<R: std::io::Read>(mut src: &mut R) -> std::io::Result<Self> {
                 unimplemented!();
             }
         }
 
-        impl ::protocol_internal::Packet for #ident {
+        impl ::protocol_internal::PacketSerializer for #ident {
             fn calculate_len(&self) -> usize {
                 match self {
                     #(#variants_packet_calc_len),*
@@ -115,7 +117,10 @@ pub(crate) fn expand(attr: Vec<NestedMeta>, item: ItemMod) -> crate::Result {
                     #(#variants_packet_ser),*
                 }
             }
+        }
+        
 
+        impl ::protocol_internal::PacketDeserializer for #ident {
             fn deserialize<R: std::io::Read>(mut src: &mut R) -> std::io::Result<Self> {
                 match ::protocol_internal::VarNum::<i32>::deserialize(src)? {
                     #(#variants_packet_de),*,

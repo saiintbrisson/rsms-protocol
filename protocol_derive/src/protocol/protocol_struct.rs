@@ -74,11 +74,11 @@ fn parse_fields(FieldsNamed { named, .. }: &FieldsNamed, id: Option<i32>) -> cra
         protocol_support: (calc_len, ser, de),
         packet: id.map(|id| (
             quote! {
-                ::protocol_internal::VarNum::<i32>::calculate_len(&#id) + ::protocol_internal::ProtocolSupport::calculate_len(self)
+                ::protocol_internal::VarNum::<i32>::calculate_len(&#id) + ::protocol_internal::ProtocolSupportSerializer::calculate_len(self)
             },
             quote! {
                 ::protocol_internal::VarNum::<i32>::serialize(&#id, dst)?;
-                ::protocol_internal::ProtocolSupport::serialize(self, dst)
+                ::protocol_internal::ProtocolSupportSerializer::serialize(self, dst)
             },
             quote! {
                 let id = ::protocol_internal::VarNum::<i32>::deserialize(src)?;
@@ -86,7 +86,7 @@ fn parse_fields(FieldsNamed { named, .. }: &FieldsNamed, id: Option<i32>) -> cra
                     return Err(std::io::Error::new(std::io::ErrorKind::InvalidInput, format!("expected id {}, got {}", #id, id)));
                 }
 
-                ::protocol_internal::ProtocolSupport::deserialize(src)
+                ::protocol_internal::ProtocolSupportDeserializer::deserialize(src)
             }
         )),
     })
@@ -100,6 +100,15 @@ fn parse_field(field: &Field) -> crate::Result<super::field::StructField> {
 
     let path = match &field.ty {
         syn::Type::Path(path) => path,
+        syn::Type::Group(group) => match &*group.elem {
+            syn::Type::Path(path) => path,
+            _ => {
+                return Err(syn::Error::new(
+                    field.span(),
+                    "ProtocolSupport expected type path",
+                ))
+            }
+        },
         _ => {
             return Err(syn::Error::new(
                 field.span(),

@@ -21,19 +21,25 @@ pub(crate) fn expand_enum(
 
     let ty = extract_repr(ident, attrs);
 
-    let path = if extract_enum_meta(attrs).is_some() {
+    let path_ser = if extract_enum_meta(attrs).is_some() {
         quote! { ::protocol_internal::VarNum::<#ty> }
     } else {
-        quote! { <#ty as ::protocol_internal::ProtocolSupport> }
+        quote! { <#ty as ::protocol_internal::ProtocolSupportSerializer> }
+    };
+
+    let path_de = if extract_enum_meta(attrs).is_some() {
+        quote! { ::protocol_internal::VarNum::<#ty> }
+    } else {
+        quote! { <#ty as ::protocol_internal::ProtocolSupportDeserializer> }
     };
 
     let stringified = ident.to_string();
 
     Ok((
-        quote! { #path::calculate_len(&(*self as #ty)) },
-        quote! { #path::serialize(&(*self as #ty), dst) },
+        quote! { #path_ser::calculate_len(&(*self as #ty)) },
+        quote! { #path_ser::serialize(&(*self as #ty), dst) },
         quote! {
-            Ok(match #path::deserialize(src)? {
+            Ok(match #path_de::deserialize(src)? {
                 #(#variants)*
                 next_state => return Err(std::io::Error::new(std::io::ErrorKind::InvalidInput, format!("did not expect {} {}", #stringified, next_state)))
             })

@@ -23,7 +23,7 @@ pub(crate) fn expand(
             let str = protocol_struct::expand_struct(data_struct, attrs)?;
             if let Some((calc_len, ser, de)) = str.packet {
                 output.append_all(quote! {
-                    impl #impl_generics ::protocol_internal::Packet for #ident #ty_generics #where_clause {
+                    impl #impl_generics ::protocol_internal::PacketSerializer for #ident #ty_generics #where_clause {
                         fn calculate_len(&self) -> usize {
                             #calc_len
                         }
@@ -31,7 +31,9 @@ pub(crate) fn expand(
                         fn serialize<W: std::io::Write>(&self, mut dst: &mut W) -> std::io::Result<()> {
                             #ser
                         }
+                    }
 
+                    impl #impl_generics ::protocol_internal::PacketDeserializer for #ident #ty_generics #where_clause {
                         fn deserialize<R: std::io::Read>(mut src: &mut R) -> std::io::Result<Self> {
                             #de
                         }
@@ -51,7 +53,7 @@ pub(crate) fn expand(
     };
 
     output.append_all(quote! {
-        impl #impl_generics ::protocol_internal::ProtocolSupport for #ident #ty_generics #where_clause {
+        impl #impl_generics ::protocol_internal::ProtocolSupportSerializer for #ident #ty_generics #where_clause {
             fn calculate_len(&self) -> usize {
                 #calc_len
             }
@@ -59,7 +61,9 @@ pub(crate) fn expand(
             fn serialize<W: std::io::Write>(&self, mut dst: &mut W) -> std::io::Result<()> {
                 #ser
             }
+        }
 
+        impl #impl_generics ::protocol_internal::ProtocolSupportDeserializer for #ident #ty_generics #where_clause {
             fn deserialize<R: std::io::Read>(mut src: &mut R) -> std::io::Result<Self> {
                 #de
             }
