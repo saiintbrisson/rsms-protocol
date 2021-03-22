@@ -39,7 +39,16 @@ packet_enum!(client_bound, ClientBound =>
     },
     0x22 => MultiBlockChange {
         chunk: ChunkPosition,
-        records: Vec<MultiBlockChangeRecord>
+        records: Vec<MultiBlockChangeRecord>;
+        items {
+            #[derive(Debug, Default, protocol_derive::ProtocolSupport)]
+            pub struct MultiBlockChangeRecord {
+                pub horizontal_position: u8,
+                pub y_coordinate: u8,
+                #[protocol_field(varnum)]
+                pub block_id: i32,
+            }
+        }
     },
     0x23 => BlockChange {
         #[protocol_field(position)]
@@ -63,27 +72,49 @@ packet_enum!(client_bound, ClientBound =>
     },
     0x26 => MapChunkBulk {
         sky_light_sent: bool,
-        location: Vec<ChunkMeta>
+        meta: Vec<ChunkMeta>,
+        data: Vec<Vec<u8>>;
+        items {
+            #[derive(Debug, Default, protocol_derive::ProtocolSupport)]
+            pub struct ChunkMeta {
+                pub position: ChunkPosition,
+                pub primary_bit_mask: u16,
+            }
+        };
+        support {
+            fn calculate_len(&self) -> usize {
+                1 
+                    + protocol_internal::VarNum::<i32>::calculate_len(&(self.meta.len() as i32)) 
+                    + protocol_internal::DynArray::calculate_len(&self.meta)
+                    + protocol_internal::DynArray::calculate_len(&self.data)
+            }
+        
+            fn serialize<W: std::io::Write>(&self, dst: &mut W) -> std::io::Result<()> {
+                protocol_internal::ProtocolSupportSerializer::serialize(&self.sky_light_sent, dst)?;
+                protocol_internal::VarNum::<i32>::serialize(&(self.meta.len() as i32), dst)?;
+                protocol_internal::DynArray::serialize(&self.meta, dst)?;
+                protocol_internal::DynArray::serialize(&self.data, dst)
+            }
 
+            fn deserialize<R: std::io::Read>(src: &mut R) -> std::io::Result<Self> {
+                let sky_light_sent = protocol_internal::ProtocolSupportDeserializer::deserialize(src)?;
+                let len = protocol_internal::VarNum::<i32>::deserialize(src)? as usize;
+        
+                let meta = protocol_internal::FixedVec::deserialize(src, len)?;
+                let data = protocol_internal::FixedVec::deserialize(src, len)?;
+        
+                Ok(Self {
+                    sky_light_sent,
+                    meta,
+                    data
+                })
+            }
+        }
     },
     0x40 => Disconnect {
         reason: ChatComponent<'static>
     }
 );
-
-#[derive(Debug, Default, protocol_derive::ProtocolSupport)]
-pub struct MultiBlockChangeRecord {
-    pub horizontal_position: u8,
-    pub y_coordinate: u8,
-    #[protocol_field(varnum)]
-    pub block_id: i32,
-}
-
-#[derive(Debug, Default, protocol_derive::ProtocolSupport)]
-pub struct ChunkMeta {
-    pub position: ChunkPosition,
-    pub primary_bit_mask: u16,
-}
 
 packet_enum!(server_bound, ServerBound =>
     0x00 => KeepAlive {
