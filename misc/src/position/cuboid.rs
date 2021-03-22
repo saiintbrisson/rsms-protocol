@@ -20,6 +20,12 @@ impl Cuboid {
             },
         }
     }
+
+    pub fn volume(&self) -> i32 {
+        (self.end.x - self.start.x + 1)
+            * (self.end.y - self.start.y + 1)
+            * (self.end.z - self.start.z + 1)
+    }
 }
 
 impl<'a> IntoIterator for &'a Cuboid {

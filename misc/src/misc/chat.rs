@@ -1,6 +1,6 @@
 use std::borrow::Cow;
 
-use protocol_internal::ProtocolSupport;
+use protocol_internal::{ProtocolSupportDeserializer, ProtocolSupportSerializer};
 use serde::{Deserialize, Serialize};
 
 #[derive(Clone, Debug, Default, Deserialize, Serialize)]
@@ -128,21 +128,23 @@ impl<'a> ChatComponent<'a> {
     }
 }
 
-impl<'a> ProtocolSupport for ChatComponent<'a> {
+impl<'a> ProtocolSupportSerializer for ChatComponent<'a> {
     fn calculate_len(&self) -> usize {
-        <String as ProtocolSupport>::calculate_len(&serde_json::to_string(self).unwrap())
+        <String as ProtocolSupportSerializer>::calculate_len(&serde_json::to_string(self).unwrap())
     }
 
     fn serialize<W: std::io::Write>(&self, dst: &mut W) -> std::io::Result<()> {
-        <String as ProtocolSupport>::serialize(
+        <String as ProtocolSupportSerializer>::serialize(
             &serde_json::to_string(self)
                 .map_err(|err| std::io::Error::new(std::io::ErrorKind::InvalidData, err))?,
             dst,
         )
     }
+}
 
+impl<'a> ProtocolSupportDeserializer for ChatComponent<'a> {
     fn deserialize<R: std::io::Read>(src: &mut R) -> std::io::Result<Self> {
-        serde_json::from_str(&<String as ProtocolSupport>::deserialize(src)?)
+        serde_json::from_str(&<String as ProtocolSupportDeserializer>::deserialize(src)?)
             .map_err(|err| std::io::Error::new(std::io::ErrorKind::InvalidData, err))
     }
 }
@@ -156,14 +158,17 @@ pub enum ChatColor {
     DarkGreen = '2' as u8,
     DarkCyan = '3' as u8,
     DarkRed = '4' as u8,
+    #[serde(rename = "dark_purple")]
     Purple = '5' as u8,
     Gold = '6' as u8,
     Gray = '7' as u8,
     DarkGray = '8' as u8,
     Blue = '9' as u8,
+    #[serde(rename = "green")]
     BrightGreen = 'A' as u8,
     Cyan = 'B' as u8,
     Red = 'C' as u8,
+    #[serde(rename = "light_purple")]
     Pink = 'D' as u8,
     Yellow = 'E' as u8,
     White = 'F' as u8,
@@ -178,6 +183,18 @@ impl ChatColor {
 impl Default for ChatColor {
     fn default() -> Self {
         Self::White
+    }
+}
+
+impl Into<char> for ChatColor {
+    fn into(self) -> char {
+        self.to_code()
+    }
+}
+
+impl Into<char> for &ChatColor {
+    fn into(self) -> char {
+        self.to_code()
     }
 }
 

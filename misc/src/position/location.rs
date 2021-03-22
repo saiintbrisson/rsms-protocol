@@ -1,5 +1,7 @@
 use protocol_internal::ProtocolPosition;
 
+use crate::prelude::Vec3D;
+
 #[derive(Clone, Debug, Default, protocol_derive::ProtocolSupport)]
 pub struct EntityLocation {
     pub x: f64,
@@ -17,6 +19,14 @@ impl EntityLocation {
             z,
             yaw,
             pitch,
+        }
+    }
+
+    pub fn block_position(&self) -> Vec3D<i32> {
+        Vec3D {
+            x: self.x as i32,
+            y: self.y as i32,
+            z: self.z as i32,
         }
     }
 }
