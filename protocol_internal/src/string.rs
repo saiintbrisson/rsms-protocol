@@ -1,17 +1,21 @@
-use crate::{ProtocolSupport, RangeValidatedSupport, VarNum};
+use crate::{
+    ProtocolSupportDeserializer, ProtocolSupportSerializer, RangeValidatedSupport, VarNum,
+};
 
-impl ProtocolSupport for String {
+impl ProtocolSupportSerializer for String {
     fn calculate_len(&self) -> usize {
         VarNum::<i32>::calculate_len(&(self.len() as i32)) + self.len()
-    }
-
-    fn deserialize<R: std::io::Read>(src: &mut R) -> std::io::Result<Self> {
-        <String as RangeValidatedSupport>::deserialize(src, 0, 32767)
     }
 
     fn serialize<W: std::io::Write>(&self, dst: &mut W) -> std::io::Result<()> {
         VarNum::<i32>::serialize(&(self.len() as i32), dst)?;
         dst.write(self.as_bytes()).map(|_| ())
+    }
+}
+
+impl ProtocolSupportDeserializer for String {
+    fn deserialize<R: std::io::Read>(src: &mut R) -> std::io::Result<Self> {
+        <String as RangeValidatedSupport>::deserialize(src, 0, 32767)
     }
 }
 

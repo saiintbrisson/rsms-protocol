@@ -1,6 +1,9 @@
-use crate::ProtocolSupport;
+use crate::ProtocolSupportDeserializer;
 
-pub trait RangeValidatedSupport<T: ProtocolSupport + Sized = Self> {
+pub trait RangeValidatedSupport<T = Self>
+where
+    T: ProtocolSupportDeserializer + Sized,
+{
     fn deserialize<R: std::io::Read>(src: &mut R, min: usize, max: usize) -> std::io::Result<T>;
 }
 
@@ -42,7 +45,7 @@ macro_rules! impl_range_validated_numeral {
                 min: usize,
                 max: usize,
             ) -> std::io::Result<Self> {
-                let value = <$n as $crate::ProtocolSupport>::deserialize(src)?;
+                let value = <$n as $crate::ProtocolSupportDeserializer>::deserialize(src)?;
 
                 if min != 0 && min as $n > value {
                     return Err(std::io::Error::new(
