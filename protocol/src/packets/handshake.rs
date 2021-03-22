@@ -27,7 +27,7 @@ impl Display for NextState {
 
 #[cfg(test)]
 mod test {
-    use protocol_internal::{Packet, ProtocolSupport};
+    use protocol_internal::{PacketSerializer, ProtocolSupportSerializer};
 
     #[test]
     fn test_handshake_len() {
@@ -38,7 +38,7 @@ mod test {
             next_state: super::NextState::Status,
         };
 
-        assert_eq!(ProtocolSupport::calculate_len(&handshake), 14);
-        assert_eq!(Packet::calculate_len(&handshake), 15);
+        assert_eq!(ProtocolSupportSerializer::calculate_len(&handshake), 14);
+        assert_eq!(PacketSerializer::calculate_len(&handshake), 15);
     }
 }

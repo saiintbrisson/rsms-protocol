@@ -46,7 +46,7 @@ pub struct SetCompression {
 
 #[cfg(test)]
 mod test {
-    use protocol_internal::ProtocolSupport;
+    use protocol_internal::ProtocolSupportSerializer;
 
     #[test]
     fn test_login_success_len() {
