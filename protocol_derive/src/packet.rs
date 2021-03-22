@@ -98,7 +98,7 @@ pub(crate) fn expand(attr: Vec<NestedMeta>, item: ItemMod) -> crate::Result {
                 })
             }
         }
-        
+
         impl ::protocol_internal::ProtocolSupportDeserializer for #ident {
             fn deserialize<R: std::io::Read>(mut src: &mut R) -> std::io::Result<Self> {
                 unimplemented!();
@@ -118,7 +118,7 @@ pub(crate) fn expand(attr: Vec<NestedMeta>, item: ItemMod) -> crate::Result {
                 }
             }
         }
-        
+
 
         impl ::protocol_internal::PacketDeserializer for #ident {
             fn deserialize<R: std::io::Read>(mut src: &mut R) -> std::io::Result<Self> {

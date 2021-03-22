@@ -1,6 +1,6 @@
 use misc::prelude::{
     BlockPosition, ChatComponent, ChatMode, ChatPosition, ChunkPosition, Difficulty, Dimension,
-    EntityLocation, GameMode, Vec2D, Vec3D
+    EntityLocation, GameMode, Vec2D, Vec3D,
 };
 
 use super::macros::packet_enum;
@@ -86,42 +86,42 @@ pub struct ChunkMeta {
 }
 
 packet_enum!(server_bound, ServerBound =>
-    0x00 => KeepAlive { 
+    0x00 => KeepAlive {
         #[protocol_field(varnum)]
         keep_alive_id: i32
     },
-    0x01 => ChatMessage { 
+    0x01 => ChatMessage {
         #[protocol_field(range(min = 1, max = 100))]
         message: String
     },
-    0x03 => Player { 
+    0x03 => Player {
         on_ground: bool
     },
-    0x04 => PlayerPosition { 
+    0x04 => PlayerPosition {
         position: Vec3D<f64>,
         on_ground: bool
     },
-    0x05 => PlayerLook { 
+    0x05 => PlayerLook {
         look: Vec2D<f32>,
         on_ground: bool
     },
-    0x06 => PlayerPositionAndLook { 
+    0x06 => PlayerPositionAndLook {
         entity_location: EntityLocation,
         on_ground: bool
     },
-    0x10 => CreativeInventoryAction { 
+    0x10 => CreativeInventoryAction {
         slot: i16,
         #[protocol_field(dynarray)]
         clicked_item: Vec<u8>
     },
-    0x15 => ClientSettings { 
+    0x15 => ClientSettings {
         locale: String,
         view_distance: i8,
         chat_mode: ChatMode,
         chat_colors: bool,
         displayed_skin_parts: u8
     },
-    0x17 => PluginMessage { 
+    0x17 => PluginMessage {
         channel: String,
         #[protocol_field(dynarray)]
         data: Vec<u8>

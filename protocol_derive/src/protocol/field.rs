@@ -67,7 +67,9 @@ impl FieldType {
             FieldType::VarNum => quote! { ::protocol_internal::VarNum::<#ty> },
             FieldType::Position => quote! { ::protocol_internal::ProtocolPositionSupport },
             FieldType::DynArray => quote! { ::protocol_internal::DynArray },
-            FieldType::Default => quote! { <#ty as ::protocol_internal::ProtocolSupportSerializer> },
+            FieldType::Default => {
+                quote! { <#ty as ::protocol_internal::ProtocolSupportSerializer> }
+            }
         }
     }
 
@@ -76,7 +78,9 @@ impl FieldType {
             FieldType::VarNum => quote! { ::protocol_internal::VarNum::<#ty> },
             FieldType::Position => quote! { ::protocol_internal::ProtocolPositionSupport },
             FieldType::DynArray => quote! { ::protocol_internal::DynArray },
-            FieldType::Default => quote! { <#ty as ::protocol_internal::ProtocolSupportDeserializer> },
+            FieldType::Default => {
+                quote! { <#ty as ::protocol_internal::ProtocolSupportDeserializer> }
+            }
         }
     }
 
