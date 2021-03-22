@@ -25,7 +25,11 @@ impl<'a> StructField<'a> {
         let ident = &self.ident;
 
         let method = if let Some(validator) = &self.validator {
-            let path = self.protocol_type.get_range_validator_path(&self.ty);
+            let path = match validator {
+                FieldValidator::Range { .. } => self.protocol_type.get_range_validator_path(&self.ty),
+                _ => self.protocol_type.get_path_de(&self.ty),
+            };
+
             validator.deserialize(&path)
         } else {
             let path = self.protocol_type.get_path_de(&self.ty);
@@ -40,15 +44,26 @@ impl<'a> StructField<'a> {
 
 #[derive(Debug)]
 pub(crate) enum FieldValidator {
+    Fixed(usize),
     Range { min: usize, max: usize },
+    Regex(String)
 }
 
 impl FieldValidator {
     pub fn deserialize(&self, path: &TokenStream) -> proc_macro2::TokenStream {
         match self {
+            FieldValidator::Fixed(len) => quote! {
+                #path::deserialize(&mut src, #len)
+            },
             FieldValidator::Range { min, max } => quote! {
                 #path::deserialize(&mut src, #min, #max)
             },
+            FieldValidator::Regex(regex) => quote! {
+                {
+                    ::lazy_static::lazy_static! { static ref REGEX: ::regex::Regex = regex::Regex::new(#regex).unwrap(); };
+                    #path::deserialize(&mut src, &REGEX)
+                }
+            }
         }
     }
 }
@@ -58,6 +73,8 @@ pub enum FieldType {
     VarNum,
     Position,
     DynArray,
+    Fixed,
+    Regex,
     Default,
 }
 
@@ -67,7 +84,7 @@ impl FieldType {
             FieldType::VarNum => quote! { ::protocol_internal::VarNum::<#ty> },
             FieldType::Position => quote! { ::protocol_internal::ProtocolPositionSupport },
             FieldType::DynArray => quote! { ::protocol_internal::DynArray },
-            FieldType::Default => {
+            _ => {
                 quote! { <#ty as ::protocol_internal::ProtocolSupportSerializer> }
             }
         }
@@ -78,6 +95,8 @@ impl FieldType {
             FieldType::VarNum => quote! { ::protocol_internal::VarNum::<#ty> },
             FieldType::Position => quote! { ::protocol_internal::ProtocolPositionSupport },
             FieldType::DynArray => quote! { ::protocol_internal::DynArray },
+            FieldType::Fixed => quote! { ::protocol_internal::FixedVec },
+            FieldType::Regex => quote! { ::protocol_internal::Regex },
             FieldType::Default => {
                 quote! { <#ty as ::protocol_internal::ProtocolSupportDeserializer> }
             }

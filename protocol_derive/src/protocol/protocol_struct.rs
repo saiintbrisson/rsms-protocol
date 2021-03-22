@@ -196,6 +196,7 @@ fn parse_field_meta(attr: &Attribute) -> Result<(Option<FieldValidator>, FieldTy
                     .as_str()
                 {
                     "range" => return Ok((Some(extract_range(&list)?), protocol_type)),
+                    "regex" => return Ok((Some(extract_regex(&list)?), FieldType::Regex)),
                     path => {
                         return Err(syn::Error::new(
                             attr.span(),
@@ -204,7 +205,26 @@ fn parse_field_meta(attr: &Attribute) -> Result<(Option<FieldValidator>, FieldTy
                     }
                 }
             }
-            _ => {}
+            syn::Meta::NameValue(value) => {
+                match value
+                    .path
+                    .get_ident()
+                    .ok_or(syn::Error::new(
+                        attr.span(),
+                        "ProtocolSupport expected attribute meta path ident",
+                    ))?
+                    .to_string()
+                    .as_str()
+                {
+                    "fixed" => return Ok((Some(extract_fixed(&value)?), FieldType::Fixed)),
+                    path => {
+                        return Err(syn::Error::new(
+                            attr.span(),
+                            format!("ProtocolSupport did not expect {}", path),
+                        ))
+                    }
+                }
+            }
         }
     }
 
@@ -265,4 +285,33 @@ fn extract_range(list: &MetaList) -> crate::Result<FieldValidator> {
     }
 
     Ok(FieldValidator::Range { min, max })
+}
+
+fn extract_regex(list: &MetaList) -> crate::Result<FieldValidator> {
+    let regex = match list.nested.first().unwrap() {
+        syn::NestedMeta::Lit(syn::Lit::Str(str)) => str.value(),
+        _ => {
+            return Err(syn::Error::new(
+                list.span(),
+                format!("ProtocolSupport regex expected string"),
+            ))
+        }
+    };
+
+    Ok(FieldValidator::Regex(regex))
+}
+
+fn extract_fixed(value: &syn::MetaNameValue) -> crate::Result<FieldValidator> {
+    let int: usize = match &value.lit {
+        syn::Lit::Int(int) => int,
+        _ => {
+            return Err(syn::Error::new(
+                value.span(),
+                format!("ProtocolSupport fixed expected int"),
+            ))
+        }
+    }
+    .base10_parse()?;
+
+    Ok(FieldValidator::Fixed(int))
 }
