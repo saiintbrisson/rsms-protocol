@@ -3,7 +3,7 @@ use misc::misc::chat::ChatComponent;
 #[derive(Debug, protocol_derive::ProtocolSupport)]
 #[packet(0x00)]
 pub struct LoginStart {
-    #[protocol_field(range(min = 1, max = 16))]
+    #[protocol_field(regex(r"^([\w]{1,16})$"))]
     pub username: String,
 }
 
