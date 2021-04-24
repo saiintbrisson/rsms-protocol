@@ -2,7 +2,7 @@ use misc::prelude::{
     BlockPosition, ChatComponent, ChatMode, ChatPosition, ChunkPosition, Difficulty, Dimension,
     EntityLocation, GameMode, Property, Vec2D, Vec3D,
 };
-use protocol_internal::{ProtocolSupportSerializer, VarNum};
+use protocol_internal::{ProtocolSupportDeserializer, ProtocolSupportSerializer, VarNum};
 use uuid::Uuid;
 
 use super::macros::packet_enum;
@@ -153,36 +153,112 @@ packet_enum!(client_bound, ClientBound =>
     },
     0x3B => ScoreboardObjective {
         objective_name: String,
-        mode: ScoreboardObjectiveMode,
-        objective_value: Option<String>,
-        objective_type: Option<String>;
+        mode: ScoreboardObjectiveMode;
         items {
-            #[repr(u8)]
-            #[derive(Clone, Copy, Debug, protocol_derive::ProtocolSupport)]
+            #[derive(Clone, Debug)]
             pub enum ScoreboardObjectiveMode {
-                Create = 0,
-                Remove = 1,
-                Update = 2,
+                Create(ScoreboardObjectiveInfo),
+                Remove,
+                Update(ScoreboardObjectiveInfo),
+            }
+            impl ScoreboardObjectiveMode {
+                fn get_id(&self) -> u8 {
+                    match self {
+                        Self::Create(_) => 0,
+                        Self::Remove => 1,
+                        Self::Update(_) => 2,
+                    }
+                }
+            }
+            impl ProtocolSupportSerializer for ScoreboardObjectiveMode {
+                fn calculate_len(&self) -> usize {
+                    1 + match self {
+                        Self::Create(info) => info.calculate_len(),
+                        Self::Remove => 0,
+                        Self::Update(info) => info.calculate_len(),
+                    }
+                }
+                fn serialize<W: std::io::Write>(&self, dst: &mut W) -> std::io::Result<()> {
+                    self.get_id().serialize(dst)?;
+                    match self {
+                        Self::Create(info) => info.serialize(dst),
+                        Self::Remove => Ok(()),
+                        Self::Update(info) => info.serialize(dst),
+                    }
+                }
+            }
+            impl ProtocolSupportDeserializer for ScoreboardObjectiveMode {
+                fn deserialize<R: std::io::Read>(src: &mut R) -> std::io::Result<Self> {
+                    Ok(match u8::deserialize(src)? {
+                        0 => Self::Create(ScoreboardObjectiveInfo::deserialize(src)?),
+                        1 => Self::Remove,
+                        2 => Self::Update(ScoreboardObjectiveInfo::deserialize(src)?),
+                        _ => panic!(),
+                    })
+                }
             }
             impl Default for ScoreboardObjectiveMode {
                 fn default() -> Self { Self::Remove }
+            }
+            #[derive(Clone, Debug, protocol_derive::ProtocolSupport)]
+            pub struct ScoreboardObjectiveInfo {
+                objective_value: String,
+                objective_type: String,
             }
         }
     },
     0x3C => UpdateScore {
         score_name: String,
-        action: UpdateScoreAction,
-        objective_name: Option<String>,
-        value: Option<i32>;
+        action: UpdateScoreAction;
         items {
-            #[repr(u8)]
-            #[derive(Clone, Copy, Debug, protocol_derive::ProtocolSupport)]
+            #[derive(Clone, Debug)]
             pub enum UpdateScoreAction {
-                Create_Update = 0,
-                Remove = 1,
+                Create_Update {
+                    objective_name: String,
+                    value: i32,
+                },
+                Remove(String),
+            }
+            impl UpdateScoreAction {
+                fn get_id(&self) -> u8 {
+                    match self {
+                        Self::Create_Update { .. } => 0,
+                        Self::Remove(_) => 1,
+                    }
+                }
             }
             impl Default for UpdateScoreAction {
-                fn default() -> Self { Self::Remove }
+                fn default() -> Self { Self::Remove(String::new()) }
+            }
+            impl ProtocolSupportSerializer for UpdateScoreAction {
+                fn calculate_len(&self) -> usize {
+                    1 + match self {
+                        Self::Create_Update { objective_name, value } => objective_name.calculate_len() + protocol_internal::VarNum::<i32>::calculate_len(value),
+                        Self::Remove(objective_name) => objective_name.calculate_len(),
+                    }
+                }
+                fn serialize<W: std::io::Write>(&self, dst: &mut W) -> std::io::Result<()> {
+                    self.get_id().serialize(dst)?;
+                    match self {
+                        Self::Create_Update { objective_name, value } => {
+                            objective_name.serialize(dst)?;
+                            protocol_internal::VarNum::<i32>::serialize(value, dst)
+                        },
+                        Self::Remove(objective_name) => objective_name.serialize(dst),
+                    }
+                }
+            }
+            impl ProtocolSupportDeserializer for UpdateScoreAction {
+                fn deserialize<R: std::io::Read>(src: &mut R) -> std::io::Result<Self> {
+                    Ok(match u8::deserialize(src)? {
+                        0 => Self::Create_Update {
+                            objective_name: String::deserialize(src)?,
+                            value: protocol_internal::VarNum::<i32>::deserialize(src)?,
+                        },
+                        1 => Self::Remove(String::deserialize(src)?),
+                        _ => panic!(),
+                    })
+                }
             }
         }
     },
@@ -204,26 +280,88 @@ packet_enum!(client_bound, ClientBound =>
     },
     0x3E => Teams {
         team_name: String,
-        mode: TeamsMode,
-        team_display_name: Option<String>,
-        team_prefix: Option<String>,
-        team_suffix: Option<String>,
-        friendly_fire: Option<String>,
-        name_tag_visibility: Option<String>,
-        color: Option<String>,
-        players: Option<Vec<String>>;
+        mode: TeamsMode;
         items {
             #[repr(u8)]
-            #[derive(Clone, Copy, Debug, protocol_derive::ProtocolSupport)]
+            #[derive(Clone, Debug)]
             pub enum TeamsMode {
-                Create = 0,
-                Remove = 1,
-                InfoUpdate = 2,
-                AddPlayer = 3,
-                RemovePlayer = 4,
+                Create {
+                    info: TeamInfo,
+                    players: Vec<String>,
+                },
+                Remove,
+                InfoUpdate(TeamInfo),
+                AddPlayers(Vec<String>),
+                RemovePlayers(Vec<String>),
+            }
+            impl TeamsMode {
+                fn get_id(&self) -> u8 {
+                    match self {
+                        Self::Create { .. } => 0,
+                        Self::Remove => 1,
+                        Self::InfoUpdate(_) => 2,
+                        Self::AddPlayers(_) => 3,
+                        Self::RemovePlayers(_) => 4,
+                    }
+                }
             }
             impl Default for TeamsMode {
                 fn default() -> Self { Self::Remove }
+            }
+            impl ProtocolSupportSerializer for TeamsMode {
+                fn calculate_len(&self) -> usize {
+                    1 + match self {
+                        Self::Create { info, players } => info.calculate_len() + players.calculate_len(),
+                        Self::Remove => 0,
+                        Self::InfoUpdate(info) => info.calculate_len(),
+                        Self::AddPlayers(players) => players.calculate_len(),
+                        Self::RemovePlayers(players) => players.calculate_len(),
+                    }
+                }
+                fn serialize<W: std::io::Write>(&self, dst: &mut W) -> std::io::Result<()> {
+                    self.get_id().serialize(dst)?;
+                    match self {
+                        Self::Create { info, players } => {
+                            info.serialize(dst)?;
+                            players.serialize(dst)
+                        },
+                        Self::Remove => Ok(()),
+                        Self::InfoUpdate(info) => info.serialize(dst),
+                        Self::AddPlayers(players) => players.serialize(dst),
+                        Self::RemovePlayers(players) => players.serialize(dst),
+                    }
+                }
+            }
+            impl ProtocolSupportDeserializer for TeamsMode {
+                fn deserialize<R: std::io::Read>(src: &mut R) -> std::io::Result<Self> {
+                    Ok(match u8::deserialize(src)? {
+                        0 => Self::Create {
+                            info: TeamInfo::deserialize(src)?,
+                            players: Vec::<String>::deserialize(src)?,
+                        },
+                        1 => Self::Remove,
+                        2 => Self::InfoUpdate(TeamInfo::deserialize(src)?),
+                        3 => Self::AddPlayers(Vec::<String>::deserialize(src)?),
+                        4 => Self::RemovePlayers(Vec::<String>::deserialize(src)?),
+                        _ => panic!(),
+                    })
+                }
+            }
+            #[derive(Clone, Debug, protocol_derive::ProtocolSupport)]
+            pub struct TeamInfo {
+                team_display_name: String,
+                team_prefix: String,
+                team_suffix: String,
+                friendly_fire: FriendlyFire,
+                name_tag_visibility: String,
+                color: misc::prelude::ChatColor,
+            }
+            #[repr(u8)]
+            #[derive(Clone, Copy, Debug, protocol_derive::ProtocolSupport)]
+            pub enum FriendlyFire {
+                Off = 0,
+                On = 1,
+                ShowInvisible = 3,
             }
         }
     },
