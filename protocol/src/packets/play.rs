@@ -264,7 +264,7 @@ packet_enum!(client_bound, ClientBound =>
     },
     0x3D => DisplayScoreboard {
         position: DisplayScoreboardPosition,
-        score_name: UpdateScoreAction;
+        score_name: String;
         items {
             #[repr(u8)]
             #[derive(Clone, Copy, Debug, protocol_derive::ProtocolSupport)]
