@@ -124,6 +124,17 @@ packet_enum!(client_bound, ClientBound =>
                 UpdateDisplayName(Vec<(Uuid, Option<ChatComponent<'static>>)>),
                 RemovePlayer(Vec<Uuid>),
             }
+            impl PlayerListItemAction {
+                pub(super) fn get_id_and_size(&self) -> (u8, usize) {
+                    match self {
+                        Self::AddPlayer(vec) => (0, vec.len()),
+                        Self::UpdateGameMode(vec) => (1, vec.len()),
+                        Self::UpdateLatency(vec) => (2, vec.len()),
+                        Self::UpdateDisplayName(vec) => (3, vec.len()),
+                        Self::RemovePlayer(vec) => (4, vec.len()),
+                    }
+                }
+            }
             impl Default for PlayerListItemAction {
                 fn default() -> Self { Self::RemovePlayer(Vec::new()) }
             }
@@ -443,7 +454,7 @@ packet_enum!(client_bound, ClientBound =>
 
 impl ProtocolSupportSerializer for client_bound::PlayerListItemAction {
     fn calculate_len(&self) -> usize {
-        match self {
+        1 + VarNum::<i32>::calculate_len(&(self.get_id_and_size().1 as i32)) + match self {
             Self::AddPlayer(vec) => {
                 vec.iter().fold(0, |acc, (_, e)| 16 + acc +e.calculate_len())
             },
@@ -459,6 +470,10 @@ impl ProtocolSupportSerializer for client_bound::PlayerListItemAction {
     }
 
     fn serialize<W: std::io::Write>(&self, dst: &mut W) -> std::io::Result<()> {
+        let (id, size) = self.get_id_and_size();
+        id.serialize(dst)?;
+        VarNum::<i32>::serialize(&(size as i32), dst)?;
+
         match self {
             Self::AddPlayer(vec) => for (id, e) in vec {
                 id.serialize(dst)?;
