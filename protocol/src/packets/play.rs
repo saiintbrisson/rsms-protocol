@@ -1,7 +1,9 @@
 use misc::prelude::{
     BlockPosition, ChatComponent, ChatMode, ChatPosition, ChunkPosition, Difficulty, Dimension,
-    EntityLocation, GameMode, Vec2D, Vec3D,
+    EntityLocation, GameMode, Property, Vec2D, Vec3D,
 };
+use protocol_internal::{ProtocolSupportSerializer, VarNum};
+use uuid::Uuid;
 
 use super::macros::packet_enum;
 
@@ -111,10 +113,172 @@ packet_enum!(client_bound, ClientBound =>
             }
         }
     },
+    0x38 => PlayerListItem {
+        players: Vec<(Uuid, PlayerListItemAction)>;
+        items {
+            #[derive(Clone, Debug)]
+            pub enum PlayerListItemAction {
+                AddPlayer {
+                    name: String,
+                    properties: Vec<Property>,
+                    game_mode: GameMode,
+                    ping: i32,
+                    display_name: Option<ChatComponent<'static>>,
+                },
+                UpdateGameMode(GameMode),
+                UpdateLatency(i32),
+                UpdateDisplayName(Option<ChatComponent<'static>>),
+                RemovePlayer,
+            }
+            impl Default for PlayerListItemAction {
+                fn default() -> Self { Self::RemovePlayer }
+            }
+        };
+        support {
+            fn calculate_len(&self) -> usize {
+                self
+                    .players
+                    .iter()
+                    .fold(0, |acc, (id, action)| acc + id.calculate_len() + action.calculate_len())
+            }
+
+            fn serialize<W: std::io::Write>(&self, _dst: &mut W) -> std::io::Result<()> {
+                todo!()
+            }
+
+            fn deserialize<R: std::io::Read>(_src: &mut R) -> std::io::Result<Self> {
+                todo!()
+            }
+        }
+    },
     0x40 => Disconnect {
         reason: ChatComponent<'static>
+    },
+    0x45 => Title {
+        action: TitleAction;
+        items {
+            #[derive(Clone, Debug)]
+            pub enum TitleAction {
+                SetTitle(ChatComponent<'static>),
+                SetSubTitle(ChatComponent<'static>),
+                SetTimesAndDisplay {
+                    fade_in: i32,
+                    stay: i32,
+                    fade_out: i32,
+                },
+                Hide,
+                Reset
+            }
+            impl TitleAction {
+                pub fn get_id(&self) -> i32 {
+                    match self {
+                        TitleAction::SetTitle(_) => 0,
+                        TitleAction::SetSubTitle(_) => 1,
+                        TitleAction::SetTimesAndDisplay { .. } => 2,
+                        TitleAction::Hide => 3,
+                        TitleAction::Reset => 4,
+                    }
+                }
+            }
+            impl Default for TitleAction {
+                fn default() -> Self { Self::Reset }
+            }
+        };
+        support {
+            fn calculate_len(&self) -> usize {
+                match &self.action {
+                    TitleAction::SetTitle(chat) => { 1 + chat.calculate_len() },
+                    TitleAction::SetSubTitle(chat) => { 1 + chat.calculate_len() },
+                    TitleAction::SetTimesAndDisplay { .. } => 13,
+                    TitleAction::Hide => 1,
+                    TitleAction::Reset => 1,
+                }
+            }
+
+            fn serialize<W: std::io::Write>(&self, dst: &mut W) -> std::io::Result<()> {
+                let id = &self.action.get_id();
+
+                protocol_internal::VarNum::<i32>::serialize(id, dst)?;
+                match &self.action {
+                    TitleAction::SetTitle(chat) => { chat.serialize(dst) },
+                    TitleAction::SetSubTitle(chat) => { chat.serialize(dst) },
+                    TitleAction::SetTimesAndDisplay { fade_in, stay, fade_out } => {
+                        fade_in.serialize(dst)?;
+                        stay.serialize(dst)?;
+                        fade_out.serialize(dst)
+                    },
+                    TitleAction::Hide => Ok(()),
+                    TitleAction::Reset => Ok(()),
+                }
+            }
+
+            fn deserialize<R: std::io::Read>(src: &mut R) -> std::io::Result<Self> {
+                Ok(Self {
+                    action: match protocol_internal::VarNum::<i32>::deserialize(src)? {
+                        0 => TitleAction::SetTitle(ChatComponent::deserialize(src)?),
+                        1 => TitleAction::SetSubTitle(ChatComponent::deserialize(src)?),
+                        2 => TitleAction::SetTimesAndDisplay {
+                            fade_in: i32::deserialize(src)?,
+                            stay: i32::deserialize(src)?,
+                            fade_out: i32::deserialize(src)?,
+                        },
+                        3 => TitleAction::Hide,
+                        4 => TitleAction::Reset,
+                        _ => panic!(),
+                    }
+                })
+            }
+        }
     }
 );
+
+impl ProtocolSupportSerializer for client_bound::PlayerListItemAction {
+    fn calculate_len(&self) -> usize {
+        use client_bound::PlayerListItemAction;
+        match self {
+            PlayerListItemAction::AddPlayer {
+                name,
+                properties,
+                game_mode,
+                ping,
+                display_name,
+            } => {
+                name.calculate_len()
+                    + properties.calculate_len()
+                    + game_mode.calculate_len()
+                    + VarNum::<i32>::calculate_len(ping)
+                    + display_name.calculate_len()
+            }
+            PlayerListItemAction::UpdateGameMode(game_mode) => game_mode.calculate_len(),
+            PlayerListItemAction::UpdateLatency(ping) => VarNum::<i32>::calculate_len(ping),
+            PlayerListItemAction::UpdateDisplayName(display_name) => display_name.calculate_len(),
+            PlayerListItemAction::RemovePlayer => 0,
+        }
+    }
+
+    fn serialize<W: std::io::Write>(&self, dst: &mut W) -> std::io::Result<()> {
+        use client_bound::PlayerListItemAction;
+        match self {
+            PlayerListItemAction::AddPlayer {
+                name,
+                properties,
+                game_mode,
+                ping,
+                display_name,
+            } => {
+                name.serialize(dst)?;
+                properties.serialize(dst)?;
+                game_mode.serialize(dst)?;
+                VarNum::<i32>::serialize(ping, dst)?;
+                display_name.serialize(dst)
+            }
+            PlayerListItemAction::UpdateGameMode(game_mode) => game_mode.serialize(dst),
+            PlayerListItemAction::UpdateLatency(ping) => VarNum::<i32>::serialize(ping, dst),
+            PlayerListItemAction::UpdateDisplayName(display_name) => display_name.serialize(dst),
+            PlayerListItemAction::RemovePlayer => Ok(()),
+        }
+    }
+}
 
 packet_enum!(server_bound, ServerBound =>
     0x00 => KeepAlive {
