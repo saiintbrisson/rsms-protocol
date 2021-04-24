@@ -229,6 +229,10 @@ packet_enum!(client_bound, ClientBound =>
                 })
             }
         }
+    },
+    0x47 => PlayerListHeaderAndFooter {
+        header: ChatComponent<'static>,
+        footer: ChatComponent<'static>
     }
 );
 
