@@ -22,7 +22,7 @@ impl ProtocolSupportDeserializer for String {
 impl RangeValidatedSupport for String {
     #[inline(always)]
     fn deserialize<R: std::io::Read>(src: &mut R, min: usize, max: usize) -> std::io::Result<Self> {
-        let len = <VarNum<i32> as RangeValidatedSupport<i32>>::deserialize(src, min, max)? as usize;
+        let len = <VarNum<i32> as RangeValidatedSupport<i32>>::deserialize(src, min, max * 4)? as usize;
 
         let mut buf = vec![0u8; len];
         if src.read(&mut buf)? != len {
@@ -32,7 +32,16 @@ impl RangeValidatedSupport for String {
             ));
         }
 
-        String::from_utf8(buf)
-            .map_err(|err| std::io::Error::new(std::io::ErrorKind::InvalidData, err))
+        let string = String::from_utf8(buf)
+                    .map_err(|err| std::io::Error::new(std::io::ErrorKind::InvalidData, err))?;
+        
+        if string.len() > max {
+            return Err(std::io::Error::new(
+                std::io::ErrorKind::InvalidInput,
+                format!("string is bigger than max {}", max),
+            ));
+        }
+
+        Ok(string)
     }
 }
