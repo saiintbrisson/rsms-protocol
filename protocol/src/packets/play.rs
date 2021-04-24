@@ -202,8 +202,8 @@ packet_enum!(client_bound, ClientBound =>
             }
             #[derive(Clone, Debug, protocol_derive::ProtocolSupport)]
             pub struct ScoreboardObjectiveInfo {
-                objective_value: String,
-                objective_type: String,
+                pub objective_value: String,
+                pub objective_type: String,
             }
         }
     },
@@ -349,12 +349,12 @@ packet_enum!(client_bound, ClientBound =>
             }
             #[derive(Clone, Debug, protocol_derive::ProtocolSupport)]
             pub struct TeamInfo {
-                team_display_name: String,
-                team_prefix: String,
-                team_suffix: String,
-                friendly_fire: FriendlyFire,
-                name_tag_visibility: String,
-                color: misc::prelude::ChatColor,
+                pub team_display_name: String,
+                pub team_prefix: String,
+                pub team_suffix: String,
+                pub friendly_fire: FriendlyFire,
+                pub name_tag_visibility: String,
+                pub color: misc::prelude::ChatColor,
             }
             #[repr(u8)]
             #[derive(Clone, Copy, Debug, protocol_derive::ProtocolSupport)]
