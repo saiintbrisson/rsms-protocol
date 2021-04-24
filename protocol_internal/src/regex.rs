@@ -10,9 +10,13 @@ impl Regex {
         regex: &regex::Regex,
     ) -> std::io::Result<String> {
         let string = String::deserialize(src)?;
-        
-        regex.is_match(&string)
+
+        regex
+            .is_match(&string)
             .then(|| string)
-            .ok_or(io::Error::new(io::ErrorKind::InvalidData, "input failed to match regex"))
+            .ok_or(io::Error::new(
+                io::ErrorKind::InvalidData,
+                "input failed to match regex",
+            ))
     }
 }

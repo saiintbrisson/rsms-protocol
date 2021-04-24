@@ -5,6 +5,7 @@ mod numeral {
     mod int;
     pub(crate) mod varnum;
 }
+mod option;
 mod position;
 mod range_validation;
 mod regex;
@@ -12,12 +13,12 @@ mod string;
 mod uuid;
 mod vec;
 
+pub use crate::regex::Regex;
 pub use dyn_array::DynArray;
 pub use fixed_vec::FixedVec;
 pub use numeral::varnum::VarNum;
 pub use position::{ProtocolPosition, ProtocolPositionSupport};
 pub use range_validation::RangeValidatedSupport;
-pub use crate::regex::Regex;
 
 use std::io;
 
