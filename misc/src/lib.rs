@@ -5,6 +5,7 @@ pub mod misc {
     pub mod difficulty;
     pub mod dimension;
     pub mod game_mode;
+    pub mod property;
 }
 
 pub mod position {
@@ -20,6 +21,7 @@ pub mod prelude {
         difficulty::Difficulty,
         dimension::Dimension,
         game_mode::GameMode,
+        property::Property,
     };
 
     pub use crate::position::{

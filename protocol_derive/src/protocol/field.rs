@@ -26,7 +26,9 @@ impl<'a> StructField<'a> {
 
         let method = if let Some(validator) = &self.validator {
             let path = match validator {
-                FieldValidator::Range { .. } => self.protocol_type.get_range_validator_path(&self.ty),
+                FieldValidator::Range { .. } => {
+                    self.protocol_type.get_range_validator_path(&self.ty)
+                }
                 _ => self.protocol_type.get_path_de(&self.ty),
             };
 
@@ -46,7 +48,7 @@ impl<'a> StructField<'a> {
 pub(crate) enum FieldValidator {
     Fixed(usize),
     Range { min: usize, max: usize },
-    Regex(String)
+    Regex(String),
 }
 
 impl FieldValidator {
@@ -63,7 +65,7 @@ impl FieldValidator {
                     ::lazy_static::lazy_static! { static ref REGEX: ::regex::Regex = regex::Regex::new(#regex).unwrap(); };
                     #path::deserialize(&mut src, &REGEX)
                 }
-            }
+            },
         }
     }
 }
