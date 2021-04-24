@@ -308,6 +308,38 @@ packet_enum!(server_bound, ServerBound =>
         entity_location: EntityLocation,
         on_ground: bool
     },
+    0x09 => HeldItemChange {
+        slot: i16
+    },
+    0x0A => Animation {},
+    0x0B => EntityAction {
+        #[protocol_field(varnum)]
+        entity_id: i32,
+        action: EntityActionType,
+        #[protocol_field(varnum)]
+        action_parameter: i32;
+        items {
+            #[repr(u8)]
+            #[derive(Clone, Copy, Debug, protocol_derive::ProtocolSupport)]
+            pub enum EntityActionType {
+                StartSneaking = 0,
+                StopSneaking = 1,
+                LeaveBed = 2,
+                StartSprinting = 3,
+                StopSprinting = 4,
+                JumpWithHorse = 5,
+                OpenRiddenHorseInventory = 6,
+            }
+            impl Default for EntityActionType {
+                fn default() -> Self {
+                    Self::StartSneaking
+                }
+            }
+        }
+    },
+    0x0D => CloseWindow {
+        window_id: u8
+    },
     0x10 => CreativeInventoryAction {
         slot: i16,
         #[protocol_field(dynarray)]
@@ -319,6 +351,23 @@ packet_enum!(server_bound, ServerBound =>
         chat_mode: ChatMode,
         chat_colors: bool,
         displayed_skin_parts: u8
+    },
+    0x16 => ClientStatus {
+        action: ClientStatusAction;
+        items {
+            #[repr(u8)]
+            #[derive(Clone, Copy, Debug, protocol_derive::ProtocolSupport)]
+            pub enum ClientStatusAction {
+                PerformRespawn = 0,
+                RequestStats = 1,
+                TakingInventoryAchievement = 2,
+            }
+            impl Default for ClientStatusAction {
+                fn default() -> Self {
+                    Self::PerformRespawn
+                }
+            }
+        }
     },
     0x17 => PluginMessage {
         channel: String,
