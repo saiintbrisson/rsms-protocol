@@ -308,6 +308,29 @@ packet_enum!(server_bound, ServerBound =>
         entity_location: EntityLocation,
         on_ground: bool
     },
+    0x07 => PlayerDigging {
+        status: PlayerDiggingStatus,
+        #[protocol_field(position)]
+        location: Vec3D<i32>,
+        face: i8;
+        items {
+            #[repr(u8)]
+            #[derive(Clone, Copy, Debug, protocol_derive::ProtocolSupport)]
+            pub enum PlayerDiggingStatus {
+                StartedDigging = 0,
+                CancelledDigging = 1,
+                FinishedDigging = 2,
+                DropItemStack = 3,
+                DropItem = 4,
+                ShootArrow_FinishEating = 5,
+            }
+            impl Default for PlayerDiggingStatus {
+                fn default() -> Self {
+                    Self::StartedDigging
+                }
+            }
+        }
+    },
     0x09 => HeldItemChange {
         slot: i16
     },
