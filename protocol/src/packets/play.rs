@@ -127,7 +127,7 @@ packet_enum!(client_bound, ClientBound =>
             impl Default for PlayerListItemAction {
                 fn default() -> Self { Self::RemovePlayer(Vec::new()) }
             }
-            #[derive(Clone, Debug, protocol_derive::ProtocolSupport)]
+            #[derive(Clone, Debug, Default, protocol_derive::ProtocolSupport)]
             pub struct PlayerListItemActionAddPlayer {
                 pub name: String,
                 pub properties: Vec<Property>,
