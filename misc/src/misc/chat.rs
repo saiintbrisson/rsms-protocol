@@ -222,6 +222,22 @@ impl From<char> for ChatColor {
     }
 }
 
+impl protocol_internal::ProtocolSupportSerializer for ChatColor {
+    fn calculate_len(&self) -> usize {
+        1
+    }
+
+    fn serialize<W: std::io::Write>(&self, dst: &mut W) -> std::io::Result<()> {
+        protocol_internal::ProtocolSupportSerializer::serialize(&(*self as u8), dst)
+    }
+}
+
+impl protocol_internal::ProtocolSupportDeserializer for ChatColor {
+    fn deserialize<R: std::io::Read>(src: &mut R) -> std::io::Result<Self> {
+        Ok(Self::from(<u8 as protocol_internal::ProtocolSupportDeserializer>::deserialize(src)? as char))
+    }
+}
+
 #[derive(Clone, Debug, Deserialize, Serialize)]
 pub struct ChatEvent<T: Sized> {
     action: T,
