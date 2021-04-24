@@ -151,6 +151,87 @@ packet_enum!(client_bound, ClientBound =>
             }
         }
     },
+    0x3B => ScoreboardObjective {
+        objective_name: String,
+        mode: ScoreboardObjectiveMode,
+        objective_value: Option<String>,
+        objective_type: Option<String>;
+        items {
+            #[repr(u8)]
+            #[derive(Clone, Copy, Debug, protocol_derive::ProtocolSupport)]
+            pub enum ScoreboardObjectiveMode {
+                Create = 0,
+                Remove = 1,
+                Update = 2,
+            }
+            impl Default for ScoreboardObjectiveMode {
+                fn default() -> Self { Self::Remove }
+            }
+        }
+    },
+    0x3C => UpdateScore {
+        score_name: String,
+        action: UpdateScoreAction,
+        objective_name: Option<String>,
+        value: Option<i32>;
+        items {
+            #[repr(u8)]
+            #[derive(Clone, Copy, Debug, protocol_derive::ProtocolSupport)]
+            pub enum UpdateScoreAction {
+                Create_Update = 0,
+                Remove = 1,
+            }
+            impl Default for UpdateScoreAction {
+                fn default() -> Self { Self::Remove }
+            }
+        }
+    },
+    0x3D => DisplayScoreboard {
+        position: DisplayScoreboardPosition,
+        score_name: UpdateScoreAction;
+        items {
+            #[repr(u8)]
+            #[derive(Clone, Copy, Debug, protocol_derive::ProtocolSupport)]
+            pub enum DisplayScoreboardPosition {
+                List = 0,
+                Sidebar = 1,
+                BelowName = 2,
+            }
+            impl Default for DisplayScoreboardPosition {
+                fn default() -> Self { Self::Sidebar }
+            }
+        }
+    },
+    0x3E => Teams {
+        team_name: String,
+        mode: TeamsMode,
+        team_display_name: Option<String>,
+        team_prefix: Option<String>,
+        team_suffix: Option<String>,
+        friendly_fire: Option<String>,
+        name_tag_visibility: Option<String>,
+        color: Option<String>,
+        players: Option<Vec<String>>;
+        items {
+            #[repr(u8)]
+            #[derive(Clone, Copy, Debug, protocol_derive::ProtocolSupport)]
+            pub enum TeamsMode {
+                Create = 0,
+                Remove = 1,
+                InfoUpdate = 2,
+                AddPlayer = 3,
+                RemovePlayer = 4,
+            }
+            impl Default for TeamsMode {
+                fn default() -> Self { Self::Remove }
+            }
+        }
+    },
+    0x3F => PluginMessage {
+        channel: String,
+        #[protocol_field(dynarray)]
+        data: Vec<u8>
+    },
     0x40 => Disconnect {
         reason: ChatComponent<'static>
     },
