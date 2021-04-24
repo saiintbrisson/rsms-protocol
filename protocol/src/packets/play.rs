@@ -114,40 +114,26 @@ packet_enum!(client_bound, ClientBound =>
         }
     },
     0x38 => PlayerListItem {
-        players: Vec<(Uuid, PlayerListItemAction)>;
+        action: PlayerListItemAction;
         items {
             #[derive(Clone, Debug)]
             pub enum PlayerListItemAction {
-                AddPlayer {
-                    name: String,
-                    properties: Vec<Property>,
-                    game_mode: GameMode,
-                    ping: i32,
-                    display_name: Option<ChatComponent<'static>>,
-                },
-                UpdateGameMode(GameMode),
-                UpdateLatency(i32),
-                UpdateDisplayName(Option<ChatComponent<'static>>),
-                RemovePlayer,
+                AddPlayer(Vec<(Uuid, PlayerListItemActionAddPlayer)>),
+                UpdateGameMode(Vec<(Uuid, GameMode)>),
+                UpdateLatency(Vec<(Uuid, i32)>),
+                UpdateDisplayName(Vec<(Uuid, Option<ChatComponent<'static>>)>),
+                RemovePlayer(Vec<Uuid>),
             }
             impl Default for PlayerListItemAction {
-                fn default() -> Self { Self::RemovePlayer }
+                fn default() -> Self { Self::RemovePlayer(Vec::new()) }
             }
-        };
-        support {
-            fn calculate_len(&self) -> usize {
-                self
-                    .players
-                    .iter()
-                    .fold(0, |acc, (id, action)| acc + id.calculate_len() + action.calculate_len())
-            }
-
-            fn serialize<W: std::io::Write>(&self, _dst: &mut W) -> std::io::Result<()> {
-                todo!()
-            }
-
-            fn deserialize<R: std::io::Read>(_src: &mut R) -> std::io::Result<Self> {
-                todo!()
+            #[derive(Clone, Debug, protocol_derive::ProtocolSupport)]
+            pub struct PlayerListItemActionAddPlayer {
+                pub name: String,
+                pub properties: Vec<Property>,
+                pub game_mode: GameMode,
+                pub ping: i32,
+                pub display_name: Option<ChatComponent<'static>>,
             }
         }
     },
@@ -457,48 +443,91 @@ packet_enum!(client_bound, ClientBound =>
 
 impl ProtocolSupportSerializer for client_bound::PlayerListItemAction {
     fn calculate_len(&self) -> usize {
-        use client_bound::PlayerListItemAction;
         match self {
-            PlayerListItemAction::AddPlayer {
-                name,
-                properties,
-                game_mode,
-                ping,
-                display_name,
-            } => {
-                name.calculate_len()
-                    + properties.calculate_len()
-                    + game_mode.calculate_len()
-                    + VarNum::<i32>::calculate_len(ping)
-                    + display_name.calculate_len()
-            }
-            PlayerListItemAction::UpdateGameMode(game_mode) => game_mode.calculate_len(),
-            PlayerListItemAction::UpdateLatency(ping) => VarNum::<i32>::calculate_len(ping),
-            PlayerListItemAction::UpdateDisplayName(display_name) => display_name.calculate_len(),
-            PlayerListItemAction::RemovePlayer => 0,
+            Self::AddPlayer(vec) => {
+                vec.iter().fold(0, |acc, (_, e)| 16 + acc +e.calculate_len())
+            },
+            Self::UpdateGameMode(vec) => vec.len() * 17,
+            Self::UpdateLatency(vec) => {
+                vec.iter().fold(0, |acc, (_, e)| 16 + acc + VarNum::<i32>::calculate_len(e))
+            },
+            Self::UpdateDisplayName(vec) => {
+                vec.iter().fold(0, |acc, (_, e)| 16 + acc + e.calculate_len())
+            },
+            Self::RemovePlayer(vec) => vec.len() * 16,
         }
     }
 
     fn serialize<W: std::io::Write>(&self, dst: &mut W) -> std::io::Result<()> {
-        use client_bound::PlayerListItemAction;
         match self {
-            PlayerListItemAction::AddPlayer {
-                name,
-                properties,
-                game_mode,
-                ping,
-                display_name,
-            } => {
-                name.serialize(dst)?;
-                properties.serialize(dst)?;
-                game_mode.serialize(dst)?;
-                VarNum::<i32>::serialize(ping, dst)?;
-                display_name.serialize(dst)
-            }
-            PlayerListItemAction::UpdateGameMode(game_mode) => game_mode.serialize(dst),
-            PlayerListItemAction::UpdateLatency(ping) => VarNum::<i32>::serialize(ping, dst),
-            PlayerListItemAction::UpdateDisplayName(display_name) => display_name.serialize(dst),
-            PlayerListItemAction::RemovePlayer => Ok(()),
+            Self::AddPlayer(vec) => for (id, e) in vec {
+                id.serialize(dst)?;
+                e.serialize(dst)?;
+            },
+            Self::UpdateGameMode(vec) => for (id, e) in vec {
+                id.serialize(dst)?;
+                e.serialize(dst)?;
+            },
+            Self::UpdateLatency(vec) => for (id, e) in vec {
+                id.serialize(dst)?;
+                VarNum::<i32>::serialize(e, dst)?;
+            },
+            Self::UpdateDisplayName(vec) => for (id, e) in vec {
+                id.serialize(dst)?;
+                e.serialize(dst)?;
+            },
+            Self::RemovePlayer(vec) => for id in vec {
+                id.serialize(dst)?;
+            },
+        };
+
+        Ok(())
+    }
+}
+
+impl ProtocolSupportDeserializer for client_bound::PlayerListItemAction {
+    fn deserialize<R: std::io::Read>(src: &mut R) -> std::io::Result<Self> {
+        use client_bound::PlayerListItemActionAddPlayer;
+        let id = VarNum::<i32>::deserialize(src)?;
+        let size = VarNum::<i32>::deserialize(src)?;
+
+        match id {
+            0 => {
+                let mut vec = Vec::new();
+                for _ in 0..size {
+                    vec.push((Uuid::deserialize(src)?, PlayerListItemActionAddPlayer::deserialize(src)?));
+                }
+                Ok(Self::AddPlayer(vec))
+            },
+            1 => {
+                let mut vec = Vec::new();
+                for _ in 0..size {
+                    vec.push((Uuid::deserialize(src)?, GameMode::deserialize(src)?));
+                }
+                Ok(Self::UpdateGameMode(vec))
+            },
+            2 => {
+                let mut vec = Vec::new();
+                for _ in 0..size {
+                    vec.push((Uuid::deserialize(src)?, VarNum::<i32>::deserialize(src)?));
+                }
+                Ok(Self::UpdateLatency(vec))
+            },
+            3 => {
+                let mut vec = Vec::new();
+                for _ in 0..size {
+                    vec.push((Uuid::deserialize(src)?, Option::deserialize(src)?));
+                }
+                Ok(Self::UpdateDisplayName(vec))
+            },
+            4 => {
+                let mut vec = Vec::new();
+                for _ in 0..size {
+                    vec.push(Uuid::deserialize(src)?);
+                }
+                Ok(Self::RemovePlayer(vec))
+            },
+            _ => panic!(),
         }
     }
 }
