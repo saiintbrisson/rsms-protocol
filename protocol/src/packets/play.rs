@@ -143,6 +143,7 @@ packet_enum!(client_bound, ClientBound =>
                 pub name: String,
                 pub properties: Vec<Property>,
                 pub game_mode: GameMode,
+                #[protocol_field(varnum)]
                 pub ping: i32,
                 pub display_name: Option<ChatComponent<'static>>,
             }
@@ -456,7 +457,7 @@ impl ProtocolSupportSerializer for client_bound::PlayerListItemAction {
     fn calculate_len(&self) -> usize {
         1 + VarNum::<i32>::calculate_len(&(self.get_id_and_size().1 as i32)) + match self {
             Self::AddPlayer(vec) => {
-                vec.iter().fold(0, |acc, (_, e)| 16 + acc +e.calculate_len())
+                vec.iter().fold(0, |acc, (_, e)| 16 + acc + e.calculate_len())
             },
             Self::UpdateGameMode(vec) => vec.len() * 17,
             Self::UpdateLatency(vec) => {
