@@ -121,9 +121,7 @@ packet_enum! {
         0x40 => Disconnect {
             reason: ChatComponent<'static>
         },
-        0x45 => Title {
-            action: TitleAction
-        },
+        0x45 => Title,
         0x47 => PlayerListHeaderAndFooter {
             header: ChatComponent<'static>,
             footer: ChatComponent<'static>
@@ -257,7 +255,7 @@ proto_enum! {
 }
 
 proto_enum! {
-    TitleAction (u8) {
+    Title (u8) {
         SetTitle {
             title: ChatComponent<'static>
         } = 0,
