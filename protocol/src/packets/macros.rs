@@ -1,7 +1,7 @@
 #[macro_export]
 macro_rules! packet {
     ($id:expr => $n:ident { $( $(#[$m:meta])? $f:ident: $t:ty),* }) => {
-        #[derive(Debug, Default, protocol_derive::ProtocolSupport)]
+        #[derive(Clone, Debug, protocol_derive::ProtocolSupport)]
         #[packet($id)]
         pub struct $n {
             $(
@@ -14,28 +14,16 @@ macro_rules! packet {
         $crate::packets::macros::packet!($id => $n { $( $(#[$m])? $f: $t),* });
         $($s)*
     };
-    ($id:expr => $n:ident { $( $(#[$m:meta])? $f:ident: $t:ty),*; support { $calc:item $ser:item $de:item } }) => {
-        $crate::packets::macros::packet!($id => $n { $( $(#[$m])? $f: $t),*; items {}; support { $calc $ser $de } });
-    };
-    ($id:expr => $n:ident { $( $(#[$m:meta])? $f:ident: $t:ty),*; items { $($s:item)* }; support { $calc:item $ser:item $de:item } }) => {
-        #[derive(Debug, Default)]
+    ($id:expr => $n:ident $({ $( $(#[$m:meta])? $f:ident: $t:ty),*; items { $($s:item)* } })?) => {
+        $(#[derive(Clone, Debug)]
         pub struct $n {
             $(
                 $(#[$m])?
                 pub $f: $t
             ),*
-        }
+        })?
 
         $($s)*
-
-        impl $crate::ProtocolSupportSerializer for $n {
-            $calc
-            $ser
-        }
-
-        impl $crate::ProtocolSupportDeserializer for $n {
-            $de
-        }
 
         impl $crate::PacketSerializer for $n {
             fn calculate_len(&self) -> usize {
@@ -63,17 +51,24 @@ macro_rules! packet {
 
 #[macro_export]
 macro_rules! packet_enum {
-    ($mod:ident, $en:ident => $($id:expr => $pn:ident { $( $(#[$m:meta])? $f:ident: $t:ty),*$(; items { $($s:item)* })?$(; support { $calc:item $ser:item $de:item })? }),*) => {
-        pub mod $mod {
-            use super::*;
-
-            $($crate::packets::macros::packet!($id => $pn { $( $(#[$m])? $f: $t),*$(; items { $($s)* })?$(; support { $calc $ser $de })? });)*
-        }
+    ($en:ident {
+        $($id:expr => $pn:ident $({ 
+            $($(#[$m:meta])? $f:ident: $t:ty),*
+            $(; items { $($s:item)* })?
+        })?),*
+    }) => {
+        use super::*;
+        $($crate::packets::macros::packet! { 
+            $id => $pn $({ 
+                $( $(#[$m])? $f: $t),*
+                $(; items { $($s)* })?
+            })?
+        })*
 
         #[allow(dead_code)]
         #[derive(Debug)]
         pub enum $en {
-            $($pn($mod::$pn)),*
+            $($pn($pn)),*
         }
 
         impl $crate::ProtocolSupportSerializer for $en {
@@ -121,4 +116,37 @@ macro_rules! packet_enum {
     };
 }
 
-pub use {packet, packet_enum};
+#[macro_export]
+macro_rules! proto_enum {
+    ($(#[$m:meta])? $n:ident ($r:ident) { 
+        $($v:ident $(= $vi:expr)?),* 
+    }) => {
+        #[repr($r)]
+        #[derive(Clone, Copy, Debug, protocol_derive::ProtocolSupport)]
+        $(#[$m])?
+        pub enum $n {
+            $($v $(= $vi)?),*
+        }
+    };
+    ($(#[$m:meta])? $n:ident ($r:ident) { 
+        $($v:ident $({
+            $($f:ident: $t:ty),*
+        })? = $vi:expr),* 
+    }) => {
+        #[repr($r)]
+        #[derive(Clone, Debug, protocol_derive::ProtocolSupport)]
+        $(#[$m])?
+        pub enum $n {
+            $(
+                #[protocol_field(enum_discriminant = $vi)]
+                $v $({
+                    $(
+                        $f: $t
+                    ),*
+                })?
+            ),*
+        }
+    };
+}
+
+pub use {packet, packet_enum, proto_enum};
