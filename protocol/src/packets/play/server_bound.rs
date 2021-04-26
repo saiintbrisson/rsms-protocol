@@ -75,6 +75,7 @@ proto_enum! {
         DropItem = 4,
         ShootArrow_FinishEating = 5
     }
+    default Self::CancelledDigging
 }
 
 proto_enum! {
@@ -87,6 +88,7 @@ proto_enum! {
         JumpWithHorse = 5,
         OpenRiddenHorseInventory = 6
     }
+    default Self::StopSneaking
 }
 
 proto_enum! {
@@ -95,4 +97,5 @@ proto_enum! {
         RequestStats = 1,
         TakingInventoryAchievement = 2
     }
+    default Self::PerformRespawn
 }

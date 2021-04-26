@@ -1,7 +1,7 @@
 #[macro_export]
 macro_rules! packet {
     ($id:expr => $n:ident { $( $(#[$m:meta])? $f:ident: $t:ty),* }) => {
-        #[derive(Clone, Debug, protocol_derive::ProtocolSupport)]
+        #[derive(Clone, Debug, Default, protocol_derive::ProtocolSupport)]
         #[packet($id)]
         pub struct $n {
             $(
@@ -15,7 +15,7 @@ macro_rules! packet {
         $($s)*
     };
     ($id:expr => $n:ident $({ $( $(#[$m:meta])? $f:ident: $t:ty),*; items { $($s:item)* } })?) => {
-        $(#[derive(Clone, Debug)]
+        $(#[derive(Clone, Debug, Default)]
         pub struct $n {
             $(
                 $(#[$m])?
@@ -120,19 +120,24 @@ macro_rules! packet_enum {
 macro_rules! proto_enum {
     ($(#[$m:meta])? $n:ident ($r:ident) { 
         $($v:ident $(= $vi:expr)?),* 
-    }) => {
+    } $(default $d:expr)?) => {
         #[repr($r)]
         #[derive(Clone, Copy, Debug, protocol_derive::ProtocolSupport)]
         $(#[$m])?
         pub enum $n {
             $($v $(= $vi)?),*
         }
+        $(impl Default for $n {
+            fn default() -> Self {
+                $d
+            }
+        })?
     };
     ($(#[$m:meta])? $n:ident ($r:ident) { 
         $($v:ident $({
             $($f:ident: $t:ty),*
         })? = $vi:expr),* 
-    }) => {
+    } $(default $d:expr)?) => {
         #[repr($r)]
         #[derive(Clone, Debug, protocol_derive::ProtocolSupport)]
         $(#[$m])?
@@ -146,6 +151,11 @@ macro_rules! proto_enum {
                 })?
             ),*
         }
+        $(impl Default for $n {
+            fn default() -> Self {
+                $d
+            }
+        })?
     };
 }
 

@@ -165,37 +165,6 @@ pub struct PlayerListItemAddPlayer {
 }
 
 proto_enum! {
-    PlayerDiggingStatus (u8) {
-        StartedDigging = 0,
-        CancelledDigging = 1,
-        FinishedDigging = 2,
-        DropItemStack = 3,
-        DropItem = 4,
-        ShootArrow_FinishEating = 5
-    }
-}
-
-proto_enum! {
-    EntityActionType (u8) {
-        StartSneaking = 0,
-        StopSneaking = 1,
-        LeaveBed = 2,
-        StartSprinting = 3,
-        StopSprinting = 4,
-        JumpWithHorse = 5,
-        OpenRiddenHorseInventory = 6
-    }
-}
-
-proto_enum! {
-    ClientStatusAction (u8) {
-        PerformRespawn = 0,
-        RequestStats = 1,
-        TakingInventoryAchievement = 2
-    }
-}
-
-proto_enum! {
     ScoreboardObjectiveMode (u8) {
         Create {
             info: ScoreboardObjectiveInfo
@@ -205,6 +174,7 @@ proto_enum! {
             info: ScoreboardObjectiveInfo
         } = 2
     }
+    default Self::Remove
 }
 
 proto_enum! {
@@ -217,6 +187,7 @@ proto_enum! {
             objective_name: String
         } = 1
     }
+    default Self::Remove { objective_name: String::new() }
 }
 
 proto_enum! {
@@ -225,6 +196,7 @@ proto_enum! {
         Sidebar = 1,
         BelowName = 2
     }
+    default Self::Sidebar
 }
 
 proto_enum! {
@@ -244,6 +216,7 @@ proto_enum! {
             players: Vec<String>
         } = 4
     }
+    default Self::Remove
 }
 
 proto_enum! {
@@ -252,6 +225,7 @@ proto_enum! {
         On = 1,
         ShowInvisible = 3
     }
+    default Self::Off
 }
 
 proto_enum! {
@@ -270,5 +244,6 @@ proto_enum! {
         Hide = 3,
         Reset = 4
     }
+    default Self::Reset
 }
 
