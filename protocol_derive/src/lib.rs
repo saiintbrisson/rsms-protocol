@@ -8,11 +8,6 @@ use proc_macro::TokenStream;
 use syn::{parse_macro_input, AttributeArgs, DeriveInput, Error, ItemMod};
 
 type Result<T = proc_macro2::TokenStream> = std::result::Result<T, Error>;
-type LSDResult = Result<(
-    proc_macro2::TokenStream,
-    proc_macro2::TokenStream,
-    proc_macro2::TokenStream,
-)>;
 
 #[proc_macro_derive(ProtocolSupport, attributes(protocol_field, packet))]
 pub fn derive_protocol_support(input: TokenStream) -> TokenStream {
