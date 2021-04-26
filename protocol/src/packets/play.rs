@@ -5,8 +5,8 @@ use misc::prelude::{
 use protocol_internal::{ProtocolSupportDeserializer, ProtocolSupportSerializer};
 use uuid::Uuid;
 
-mod client_bound;
-mod server_bound;
+pub mod client_bound;
+pub mod server_bound;
 
 pub use client_bound::ClientBound;
 pub use server_bound::ServerBound;
