@@ -1,31 +1,7 @@
 #[macro_export]
 macro_rules! packet {
-    ($id:expr => $n:ident { $( $(#[$m:meta])? $f:ident: $t:ty),* }) => {
-        #[derive(Clone, Debug, Default, protocol_derive::ProtocolSupport)]
-        #[packet($id)]
-        pub struct $n {
-            $(
-                $(#[$m])?
-                pub $f: $t
-            ),*
-        }
-    };
-    ($id:expr => $n:ident { $( $(#[$m:meta])? $f:ident: $t:ty),*; items { $($s:item)* } }) => {
-        $crate::packets::macros::packet!($id => $n { $( $(#[$m])? $f: $t),* });
-        $($s)*
-    };
-    ($id:expr => $n:ident $({ $( $(#[$m:meta])? $f:ident: $t:ty),*; items { $($s:item)* } })?) => {
-        $(#[derive(Clone, Debug, Default)]
-        pub struct $n {
-            $(
-                $(#[$m])?
-                pub $f: $t
-            ),*
-        })?
-
-        $($s)*
-
-        impl $crate::PacketSerializer for $n {
+    ($id:expr => $n:ident $(<$($l:lifetime),+>)?) => {
+        impl $(<$($l),+>)? $crate::PacketSerializer for $n $(<$($l),+>)? {
             fn calculate_len(&self) -> usize {
                 $crate::VarNum::<i32>::calculate_len(&$id) + $crate::ProtocolSupportSerializer::calculate_len(self)
             }
@@ -36,7 +12,7 @@ macro_rules! packet {
             }
         }
 
-        impl $crate::PacketDeserializer for $n {
+        impl $(<$($l),+>)? $crate::PacketDeserializer for $n $(<$($l),+>)? {
             fn deserialize<R: std::io::Read>(src: &mut R) -> std::io::Result<Self> {
                 let id = $crate::VarNum::<i32>::deserialize(src)? as usize;
                 if id != $id {
@@ -47,19 +23,33 @@ macro_rules! packet {
             }
         }
     };
+    ($id:expr => $n:ident $(<$($l:lifetime),+>)? { $( $(#[$m:meta])? $f:ident: $t:ty),* }) => {
+        #[derive(Clone, Debug, Default, protocol_derive::ProtocolSupport)]
+        #[packet($id)]
+        pub struct $n $(<$($l),+>)? {
+            $(
+                $(#[$m])?
+                pub $f: $t
+            ),*
+        }
+    };
+    ($id:expr => $n:ident $(<$($l:lifetime),+>)? { $( $(#[$m:meta])? $f:ident: $t:ty),*; items { $($s:item)* } }) => {
+        $crate::packets::macros::packet!($id => $n $(<$($l),+>)? { $( $(#[$m])? $f: $t),* });
+        $($s)*
+    };
 }
 
 #[macro_export]
 macro_rules! packet_enum {
-    ($en:ident {
-        $($id:expr => $pn:ident $({ 
+    ($en:ident $(<$($l:lifetime),+>)? {
+        $($id:expr => $pn:ident $(<$($pl:lifetime),+>)? $({ 
             $($(#[$m:meta])? $f:ident: $t:ty),*
             $(; items { $($s:item)* })?
         })?),*
     }) => {
         use super::*;
         $($crate::packets::macros::packet! { 
-            $id => $pn $({ 
+            $id => $pn $(<$($pl),+>)? $({ 
                 $( $(#[$m])? $f: $t),*
                 $(; items { $($s)* })?
             })?
@@ -67,11 +57,11 @@ macro_rules! packet_enum {
 
         #[allow(dead_code)]
         #[derive(Debug)]
-        pub enum $en {
-            $($pn($pn)),*
+        pub enum $en $(<$($l),+>)? {
+            $($pn($pn$(<$($pl),+>)?)),*
         }
 
-        impl $crate::ProtocolSupportSerializer for $en {
+        impl $(<$($l),+>)? $crate::ProtocolSupportSerializer for $en $(<$($l),+>)? {
             fn calculate_len(&self) -> usize {
                 match self {
                     $(Self::$pn(packet) => $crate::ProtocolSupportSerializer::calculate_len(packet)),*
@@ -85,13 +75,13 @@ macro_rules! packet_enum {
             }
         }
 
-        impl $crate::ProtocolSupportDeserializer for $en {
+        impl $(<$($l),+>)? $crate::ProtocolSupportDeserializer for $en $(<$($l),+>)? {
             fn deserialize<R: std::io::Read>(_: &mut R) -> std::io::Result<Self> {
                 unimplemented!();
             }
         }
 
-        impl $crate::PacketSerializer for $en {
+        impl $(<$($l),+>)? $crate::PacketSerializer for $en $(<$($l),+>)? {
             fn calculate_len(&self) -> usize {
                 match self {
                     $(Self::$pn(packet) => $crate::PacketSerializer::calculate_len(packet)),*
@@ -105,7 +95,7 @@ macro_rules! packet_enum {
             }
         }
 
-        impl $crate::PacketDeserializer for $en {
+        impl $(<$($l),+>)? $crate::PacketDeserializer for $en $(<$($l),+>)? {
             fn deserialize<R: std::io::Read>(src: &mut R) -> std::io::Result<Self> {
                 match $crate::VarNum::<i32>::deserialize(src)? {
                     $($id => Ok(Self::$pn($crate::ProtocolSupportDeserializer::deserialize(src)?))),*,
@@ -118,30 +108,30 @@ macro_rules! packet_enum {
 
 #[macro_export]
 macro_rules! proto_enum {
-    ($(#[$m:meta])? $n:ident ($r:ident) { 
+    ($(#[$m:meta])? $n:ident $(<$($l:lifetime),+>)? ($r:ident) { 
         $($v:ident $(= $vi:expr)?),* 
-    } $(default $d:expr)?) => {
+    } default $d:expr) => {
         #[repr($r)]
         #[derive(Clone, Copy, Debug, protocol_derive::ProtocolSupport)]
         $(#[$m])?
         pub enum $n {
             $($v $(= $vi)?),*
         }
-        $(impl Default for $n {
+        impl $(<$($l),+>)? Default for $n $(<$($l),+>)? {
             fn default() -> Self {
                 $d
             }
-        })?
+        }
     };
-    ($(#[$m:meta])? $n:ident ($r:ident) { 
+    ($(#[$m:meta])? $n:ident $(<$($l:lifetime),+>)? ($r:ident) { 
         $($v:ident $({
             $($f:ident: $t:ty),*
         })? = $vi:expr),* 
-    } $(default $d:expr)?) => {
+    } default $d:expr) => {
         #[repr($r)]
         #[derive(Clone, Debug, protocol_derive::ProtocolSupport)]
         $(#[$m])?
-        pub enum $n {
+        pub enum $n $(<$($l),+>)? {
             $(
                 #[protocol_field(enum_discriminant = $vi)]
                 $v $({
@@ -151,11 +141,11 @@ macro_rules! proto_enum {
                 })?
             ),*
         }
-        $(impl Default for $n {
+        impl $(<$($l),+>)? Default for $n $(<$($l),+>)? {
             fn default() -> Self {
                 $d
             }
-        })?
+        }
     };
 }
 

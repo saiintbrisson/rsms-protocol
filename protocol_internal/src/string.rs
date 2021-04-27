@@ -45,3 +45,14 @@ impl RangeValidatedSupport for String {
         Ok(string)
     }
 }
+
+impl ProtocolSupportSerializer for str {
+    fn calculate_len(&self) -> usize {
+        VarNum::<i32>::calculate_len(&(self.len() as i32)) + self.len()
+    }
+
+    fn serialize<W: std::io::Write>(&self, dst: &mut W) -> std::io::Result<()> {
+        VarNum::<i32>::serialize(&(self.len() as i32), dst)?;
+        dst.write(self.as_bytes()).map(|_| ())
+    }
+}

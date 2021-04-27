@@ -1,4 +1,5 @@
 mod bool;
+mod cow;
 mod dyn_array;
 mod fixed_vec;
 mod numeral {

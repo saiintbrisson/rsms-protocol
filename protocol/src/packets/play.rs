@@ -24,7 +24,7 @@ mod test {
             dimension: Dimension::Overworld,
             difficulty: Difficulty::Normal,
             max_players: 100,
-            level_type: "".to_string(),
+            level_type: "".into(),
             reduced_debug_info: false,
         });
 

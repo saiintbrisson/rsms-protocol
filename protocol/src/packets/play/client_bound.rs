@@ -1,22 +1,24 @@
+use std::borrow::Cow;
+
 use crate::packets::macros::{packet_enum, proto_enum};
 
 packet_enum! {
-    ClientBound {
+    ClientBound<'a> {
         0x00 => KeepAlive {
             #[protocol_field(varnum)]
             keep_alive_id: i32
         },
-        0x01 => JoinGame {
+        0x01 => JoinGame<'a> {
             entity_id: i32,
             game_mode: GameMode,
             dimension: Dimension,
             difficulty: Difficulty,
             max_players: u8,
-            level_type: String,
+            level_type: Cow<'a, str>,
             reduced_debug_info: bool
         },
-        0x02 => ChatMessage {
-            json_data: ChatComponent<'static>,
+        0x02 => ChatMessage<'a> {
+            json_data: ChatComponent<'a>,
             position: ChatPosition
         },
         0x05 => SpawnPosition {
@@ -100,62 +102,62 @@ packet_enum! {
                 }
             }
         },
-        0x2D => OpenWindow {
+        0x2D => OpenWindow<'a> {
             window_id: u8,
-            window_type: String,
-            window_title: ChatComponent<'static>,
+            window_type: Cow<'a, str>,
+            window_title: ChatComponent<'a>,
             number_of_slots: u8
         },
         0x2E => CloseWindow {
             window_id: u8
         },
-        0x38 => PlayerListItem,
-        0x3B => ScoreboardObjective {
-            objective_name: String,
-            mode: ScoreboardObjectiveMode;
+        0x38 => PlayerListItem<'a>,
+        0x3B => ScoreboardObjective<'a> {
+            objective_name: Cow<'a, str>,
+            mode: ScoreboardObjectiveMode<'a>;
             items {
                 #[derive(Clone, Debug, protocol_derive::ProtocolSupport)]
-                pub struct ScoreboardObjectiveInfo {
-                    pub objective_value: String,
-                    pub objective_type: String,
+                pub struct ScoreboardObjectiveInfo<'a> {
+                    pub objective_value: Cow<'a, str>,
+                    pub objective_type: Cow<'a, str>,
                 }
             }
         },
-        0x3C => UpdateScore {
-            score_name: String,
-            action: UpdateScoreAction
+        0x3C => UpdateScore<'a> {
+            score_name: Cow<'a, str>,
+            action: UpdateScoreAction<'a>
         },
-        0x3D => DisplayScoreboard {
+        0x3D => DisplayScoreboard<'a> {
             position: DisplayScoreboardPosition,
-            score_name: String
+            score_name: Cow<'a, str>
         },
-        0x3E => Teams {
-            team_name: String,
-            mode: TeamsMode;
+        0x3E => Teams<'a> {
+            team_name: Cow<'a, str>,
+            mode: TeamsMode<'a>;
             items {
                 #[derive(Clone, Debug, protocol_derive::ProtocolSupport)]
-                pub struct TeamInfo {
-                    pub team_display_name: String,
-                    pub team_prefix: String,
-                    pub team_suffix: String,
+                pub struct TeamInfo<'a> {
+                    pub team_display_name: Cow<'a, str>,
+                    pub team_prefix: Cow<'a, str>,
+                    pub team_suffix: Cow<'a, str>,
                     pub friendly_fire: FriendlyFire,
-                    pub name_tag_visibility: String,
+                    pub name_tag_visibility: Cow<'a, str>,
                     pub color: misc::prelude::ChatColor,
                 }
             }
         },
-        0x3F => PluginMessage {
-            channel: String,
+        0x3F => PluginMessage<'a> {
+            channel: Cow<'a, str>,
             #[protocol_field(dynarray)]
             data: Vec<u8>
         },
-        0x40 => Disconnect {
-            reason: ChatComponent<'static>
+        0x40 => Disconnect<'a> {
+            reason: ChatComponent<'a>
         },
-        0x45 => Title,
-        0x47 => PlayerListHeaderAndFooter {
-            header: ChatComponent<'static>,
-            footer: ChatComponent<'static>
+        0x45 => Title<'a>,
+        0x47 => PlayerListHeaderAndFooter<'a> {
+            header: ChatComponent<'a>,
+            footer: ChatComponent<'a>
         }
     }
 }
@@ -178,38 +180,38 @@ impl Default for PlayerPositionAndLookFlags {
 }
 
 #[derive(Clone, Debug)]
-pub enum PlayerListItem {
-    AddPlayer(Vec<(Uuid, PlayerListItemAddPlayer)>),
+pub enum PlayerListItem<'a> {
+    AddPlayer(Vec<(Uuid, PlayerListItemAddPlayer<'a>)>),
     UpdateGameMode(Vec<(Uuid, GameMode)>),
     UpdateLatency(Vec<(Uuid, i32)>),
-    UpdateDisplayName(Vec<(Uuid, Option<ChatComponent<'static>>)>),
+    UpdateDisplayName(Vec<(Uuid, Option<ChatComponent<'a>>)>),
     RemovePlayer(Vec<Uuid>),
 }
 
-impl ProtocolSupportSerializer for PlayerListItem {
+impl <'a> ProtocolSupportSerializer for PlayerListItem<'a> {
     fn calculate_len(&self) -> usize {
         todo!()
     }
 
-    fn serialize<W: std::io::Write>(&self, dst: &mut W) -> std::io::Result<()> {
+    fn serialize<W: std::io::Write>(&self, _dst: &mut W) -> std::io::Result<()> {
         todo!()
     }
 }
 
-impl ProtocolSupportDeserializer for PlayerListItem {
-    fn deserialize<R: std::io::Read>(src: &mut R) -> std::io::Result<Self> {
+impl <'a> ProtocolSupportDeserializer for PlayerListItem<'a> {
+    fn deserialize<R: std::io::Read>(_src: &mut R) -> std::io::Result<Self> {
         todo!()
     }
 }
 
 #[derive(Clone, Debug, Default, protocol_derive::ProtocolSupport)]
-pub struct PlayerListItemAddPlayer {
-    pub name: String,
+pub struct PlayerListItemAddPlayer<'a> {
+    pub name: Cow<'a, str>,
     pub properties: Vec<Property>,
     pub game_mode: GameMode,
     #[protocol_field(varnum)]
     pub ping: i32,
-    pub display_name: Option<String>
+    pub display_name: Option<Cow<'a, str>>
 }
 
 proto_enum! {
@@ -225,29 +227,29 @@ proto_enum! {
 }
 
 proto_enum! {
-    ScoreboardObjectiveMode (u8) {
+    ScoreboardObjectiveMode<'a> (u8) {
         Create {
-            info: ScoreboardObjectiveInfo
+            info: ScoreboardObjectiveInfo<'a>
         } = 0,
         Remove = 1,
         Update {
-            info: ScoreboardObjectiveInfo
+            info: ScoreboardObjectiveInfo<'a>
         } = 2
     }
     default Self::Remove
 }
 
 proto_enum! {
-    UpdateScoreAction (u8) {
+    UpdateScoreAction<'a> (u8) {
         Create_Update {
-            objective_name: String,
+            objective_name: Cow<'a, str>,
             value: i32
         } = 0,
         Remove {
-            objective_name: String
+            objective_name: Cow<'a, str>
         } = 1
     }
-    default Self::Remove { objective_name: String::new() }
+    default Self::Remove { objective_name: "".into() }
 }
 
 proto_enum! {
@@ -260,20 +262,20 @@ proto_enum! {
 }
 
 proto_enum! {
-    TeamsMode (u8) {
+    TeamsMode<'a> (u8) {
         Create {
-            info: TeamInfo,
-            players: Vec<String>
+            info: TeamInfo<'a>,
+            players: Vec<Cow<'a, str>>
         } = 0,
         Remove = 1,
         InfoUpdate {
-            info: TeamInfo
+            info: TeamInfo<'a>
         } = 2,
         AddPlayers {
-            players: Vec<String>
+            players: Vec<Cow<'a, str>>
         } = 3,
         RemovePlayers {
-            players: Vec<String>
+            players: Vec<Cow<'a, str>>
         } = 4
     }
     default Self::Remove
@@ -289,12 +291,12 @@ proto_enum! {
 }
 
 proto_enum! {
-    Title (u8) {
+    Title<'a> (u8) {
         SetTitle {
-            title: ChatComponent<'static>
+            title: ChatComponent<'a>
         } = 0,
         SetSubTitle {
-            sub_title: ChatComponent<'static>
+            sub_title: ChatComponent<'a>
         } = 1,
         SetTimesAndDisplay {
             fade_in: i32,
