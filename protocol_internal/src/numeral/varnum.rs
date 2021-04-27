@@ -86,3 +86,30 @@ impl VarNum<i64> {
 
 impl_range_validated_numeral!(i32, VarNum);
 impl_range_validated_numeral!(i64, VarNum);
+
+impl VarNum<Vec<i32>> {
+    #[inline(always)]
+    #[rustfmt::skip]
+    pub fn calculate_len(value: &Vec<i32>) -> usize {
+        value.iter().fold(0, |acc, e| acc + VarNum::<i32>::calculate_len(e))
+    }
+
+    pub fn serialize<W: std::io::Write>(value: &Vec<i32>, dst: &mut W) -> io::Result<()> {
+        for e in value {
+            VarNum::<i32>::serialize(e, dst)?;
+        }
+
+        Ok(())
+    }
+
+    pub fn deserialize<R: std::io::Read>(src: &mut R) -> io::Result<Vec<i32>> {
+        let len = VarNum::<i32>::deserialize(src)? as usize;
+
+        let mut buf = Vec::with_capacity(len);
+        while buf.len() < buf.capacity() {
+            buf.push(VarNum::<i32>::deserialize(src)?);
+        }
+
+        Ok(buf)
+    }
+}

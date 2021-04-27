@@ -17,7 +17,7 @@ pub mod position {
 pub mod prelude {
     pub use crate::misc::{
         chat::{ChatColor, ChatComponent, ChatEvent, ChatPosition},
-        client_settings::ChatMode,
+        client_settings::{ChatMode, DisplayedSkinParts},
         difficulty::Difficulty,
         dimension::Dimension,
         game_mode::GameMode,

@@ -1,6 +1,6 @@
 use misc::prelude::{
-    BlockPosition, ChatComponent, ChatMode, ChatPosition, ChunkPosition, Difficulty, Dimension,
-    EntityLocation, GameMode, Property, Vec2D, Vec3D,
+    BlockPosition, ChatComponent, ChatMode, ChatPosition, ChunkPosition, Difficulty, Dimension, 
+    DisplayedSkinParts, EntityLocation, GameMode, Property, Vec2D, Vec3D,
 };
 use protocol_internal::{ProtocolSupportDeserializer, ProtocolSupportSerializer};
 use uuid::Uuid;

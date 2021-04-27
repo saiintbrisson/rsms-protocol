@@ -30,3 +30,19 @@ impl<T: ProtocolPosition> ProtocolPositionSupport<T> {
         ))
     }
 }
+
+impl<T: ProtocolPosition> ProtocolPosition for Option<T> {
+    fn to_position(&self) -> i64 {
+        match self {
+            Some(position) => position.to_position(),
+            None => 0,
+        }
+    }
+
+    fn from_position(position: i64) -> Self
+    where
+        Self: Sized 
+    {
+        Some(T::from_position(position))
+    }
+}

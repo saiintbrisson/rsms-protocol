@@ -25,7 +25,29 @@ packet_enum! {
         },
         0x08 => PlayerPositionAndLook {
             entity_location: EntityLocation,
-            flags: u8
+            flags: PlayerPositionAndLookFlags
+        },
+        0x09 => HeldItemChange {
+            slot: i8
+        },
+        0x0B => Animation {
+            #[protocol_field(varnum)]
+            entity_id: i32,
+            animation: AnimationAction
+        },
+        0x0D => CollectItem {
+            #[protocol_field(varnum)]
+            collected_entity_id: i32,
+            #[protocol_field(varnum)]
+            collector_entity_id: i32
+        },
+        0x13 => DestroyEntities {
+            #[protocol_field(varnum)]
+            entities: Vec<i32>
+        },
+        0x14 => Entity {
+            #[protocol_field(varnum)]
+            entity_id: i32
         },
         0x21 => ChunkData {
             position: ChunkPosition,
@@ -78,6 +100,15 @@ packet_enum! {
                 }
             }
         },
+        0x2D => OpenWindow {
+            window_id: u8,
+            window_type: String,
+            window_title: ChatComponent<'static>,
+            number_of_slots: u8
+        },
+        0x2E => CloseWindow {
+            window_id: u8
+        },
         0x38 => PlayerListItem,
         0x3B => ScoreboardObjective {
             objective_name: String,
@@ -129,6 +160,23 @@ packet_enum! {
     }
 }
 
+bitflags::bitflags! {
+    #[derive(protocol_derive::ProtocolSupport)]
+    pub struct PlayerPositionAndLookFlags: u8 {
+        const X = 0x01;
+        const Y = 0x02;
+        const Z = 0x04;
+        const Y_ROT = 0x08;
+        const X_ROT = 0x10;
+    }
+}
+
+impl Default for PlayerPositionAndLookFlags {
+    fn default() -> Self {
+        Self::empty()
+    }
+}
+
 #[derive(Clone, Debug)]
 pub enum PlayerListItem {
     AddPlayer(Vec<(Uuid, PlayerListItemAddPlayer)>),
@@ -162,6 +210,18 @@ pub struct PlayerListItemAddPlayer {
     #[protocol_field(varnum)]
     pub ping: i32,
     pub display_name: Option<String>
+}
+
+proto_enum! {
+    AnimationAction (u8) {
+        SwingArm = 0,
+        TakeDamage = 1,
+        LeaveBed = 2,
+        EatFood = 3,
+        CriticalEffect = 4,
+        MagicCriticalEffect = 5
+    }
+    default Self::SwingArm
 }
 
 proto_enum! {

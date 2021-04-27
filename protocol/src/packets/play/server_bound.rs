@@ -50,12 +50,18 @@ packet_enum! {
             #[protocol_field(dynarray)]
             clicked_item: Vec<u8>
         },
+        0x14 => TabComplete {
+            #[protocol_field(range(max = 100))]
+            text: String,
+            #[protocol_field(position)]
+            position: Option<Vec3D<i32>>
+        },
         0x15 => ClientSettings {
             locale: String,
             view_distance: i8,
             chat_mode: ChatMode,
             chat_colors: bool,
-            displayed_skin_parts: u8
+            displayed_skin_parts: DisplayedSkinParts
         },
         0x16 => ClientStatus,
         0x17 => PluginMessage {
