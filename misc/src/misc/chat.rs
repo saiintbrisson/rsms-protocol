@@ -1,6 +1,6 @@
 use std::borrow::Cow;
 
-use protocol_internal::{ProtocolSupportDeserializer, ProtocolSupportSerializer};
+use protocol_internal::{ProtocolSupportDecoder, ProtocolSupportEncoder};
 use serde::{Deserialize, Serialize};
 
 #[derive(Clone, Debug, Default, Deserialize, Serialize)]
@@ -128,13 +128,13 @@ impl<'a> ChatComponent<'a> {
     }
 }
 
-impl<'a> ProtocolSupportSerializer for ChatComponent<'a> {
+impl<'a> ProtocolSupportEncoder for ChatComponent<'a> {
     fn calculate_len(&self) -> usize {
-        <String as ProtocolSupportSerializer>::calculate_len(&serde_json::to_string(self).unwrap())
+        <String as ProtocolSupportEncoder>::calculate_len(&serde_json::to_string(self).unwrap())
     }
 
-    fn serialize<W: std::io::Write>(&self, dst: &mut W) -> std::io::Result<()> {
-        <String as ProtocolSupportSerializer>::serialize(
+    fn encode<W: std::io::Write>(&self, dst: &mut W) -> std::io::Result<()> {
+        <String as ProtocolSupportEncoder>::encode(
             &serde_json::to_string(self)
                 .map_err(|err| std::io::Error::new(std::io::ErrorKind::InvalidData, err))?,
             dst,
@@ -142,9 +142,9 @@ impl<'a> ProtocolSupportSerializer for ChatComponent<'a> {
     }
 }
 
-impl<'a> ProtocolSupportDeserializer for ChatComponent<'a> {
-    fn deserialize<R: std::io::Read>(src: &mut R) -> std::io::Result<Self> {
-        serde_json::from_str(&<String as ProtocolSupportDeserializer>::deserialize(src)?)
+impl<'a> ProtocolSupportDecoder for ChatComponent<'a> {
+    fn decode<R: std::io::Read>(src: &mut R) -> std::io::Result<Self> {
+        serde_json::from_str(&<String as ProtocolSupportDecoder>::decode(src)?)
             .map_err(|err| std::io::Error::new(std::io::ErrorKind::InvalidData, err))
     }
 }
@@ -222,19 +222,19 @@ impl From<char> for ChatColor {
     }
 }
 
-impl protocol_internal::ProtocolSupportSerializer for ChatColor {
+impl protocol_internal::ProtocolSupportEncoder for ChatColor {
     fn calculate_len(&self) -> usize {
         1
     }
 
-    fn serialize<W: std::io::Write>(&self, dst: &mut W) -> std::io::Result<()> {
-        protocol_internal::ProtocolSupportSerializer::serialize(&(*self as u8), dst)
+    fn encode<W: std::io::Write>(&self, dst: &mut W) -> std::io::Result<()> {
+        protocol_internal::ProtocolSupportEncoder::encode(&(*self as u8), dst)
     }
 }
 
-impl protocol_internal::ProtocolSupportDeserializer for ChatColor {
-    fn deserialize<R: std::io::Read>(src: &mut R) -> std::io::Result<Self> {
-        Ok(Self::from(<u8 as protocol_internal::ProtocolSupportDeserializer>::deserialize(src)? as char))
+impl protocol_internal::ProtocolSupportDecoder for ChatColor {
+    fn decode<R: std::io::Read>(src: &mut R) -> std::io::Result<Self> {
+        Ok(Self::from(<u8 as protocol_internal::ProtocolSupportDecoder>::decode(src)? as char))
     }
 }
 

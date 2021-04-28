@@ -1,28 +1,28 @@
 use crate::{
-    ProtocolSupportDeserializer, ProtocolSupportSerializer, RangeValidatedSupport, VarNum,
+    ProtocolSupportDecoder, ProtocolSupportEncoder, RangeValidatedSupport, VarNum,
 };
 
-impl ProtocolSupportSerializer for String {
+impl ProtocolSupportEncoder for String {
     fn calculate_len(&self) -> usize {
         VarNum::<i32>::calculate_len(&(self.len() as i32)) + self.len()
     }
 
-    fn serialize<W: std::io::Write>(&self, dst: &mut W) -> std::io::Result<()> {
-        VarNum::<i32>::serialize(&(self.len() as i32), dst)?;
+    fn encode<W: std::io::Write>(&self, dst: &mut W) -> std::io::Result<()> {
+        VarNum::<i32>::encode(&(self.len() as i32), dst)?;
         dst.write(self.as_bytes()).map(|_| ())
     }
 }
 
-impl ProtocolSupportDeserializer for String {
-    fn deserialize<R: std::io::Read>(src: &mut R) -> std::io::Result<Self> {
-        <String as RangeValidatedSupport>::deserialize(src, 0, 32767)
+impl ProtocolSupportDecoder for String {
+    fn decode<R: std::io::Read>(src: &mut R) -> std::io::Result<Self> {
+        <String as RangeValidatedSupport>::decode(src, 0, 32767)
     }
 }
 
 impl RangeValidatedSupport for String {
     #[inline(always)]
-    fn deserialize<R: std::io::Read>(src: &mut R, min: usize, max: usize) -> std::io::Result<Self> {
-        let len = <VarNum<i32> as RangeValidatedSupport<i32>>::deserialize(src, min, max * 4)? as usize;
+    fn decode<R: std::io::Read>(src: &mut R, min: usize, max: usize) -> std::io::Result<Self> {
+        let len = <VarNum<i32> as RangeValidatedSupport<i32>>::decode(src, min, max * 4)? as usize;
 
         let mut buf = vec![0u8; len];
         if src.read(&mut buf)? != len {
@@ -46,13 +46,13 @@ impl RangeValidatedSupport for String {
     }
 }
 
-impl ProtocolSupportSerializer for str {
+impl ProtocolSupportEncoder for str {
     fn calculate_len(&self) -> usize {
         VarNum::<i32>::calculate_len(&(self.len() as i32)) + self.len()
     }
 
-    fn serialize<W: std::io::Write>(&self, dst: &mut W) -> std::io::Result<()> {
-        VarNum::<i32>::serialize(&(self.len() as i32), dst)?;
+    fn encode<W: std::io::Write>(&self, dst: &mut W) -> std::io::Result<()> {
+        VarNum::<i32>::encode(&(self.len() as i32), dst)?;
         dst.write(self.as_bytes()).map(|_| ())
     }
 }

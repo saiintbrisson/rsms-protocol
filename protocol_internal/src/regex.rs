@@ -1,15 +1,15 @@
 use std::io;
 
-use crate::ProtocolSupportDeserializer;
+use crate::ProtocolSupportDecoder;
 
 pub struct Regex;
 
 impl Regex {
-    pub fn deserialize<R: std::io::Read>(
+    pub fn decode<R: std::io::Read>(
         src: &mut R,
         regex: &regex::Regex,
     ) -> std::io::Result<String> {
-        let string = String::deserialize(src)?;
+        let string = String::decode(src)?;
 
         regex
             .is_match(&string)

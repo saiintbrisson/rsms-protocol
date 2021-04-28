@@ -1,20 +1,20 @@
 use uuid::Uuid;
 
-use crate::{ProtocolSupportDeserializer, ProtocolSupportSerializer};
+use crate::{ProtocolSupportDecoder, ProtocolSupportEncoder};
 
-impl ProtocolSupportSerializer for Uuid {
+impl ProtocolSupportEncoder for Uuid {
     fn calculate_len(&self) -> usize {
         16
     }
 
-    fn serialize<W: std::io::Write>(&self, dst: &mut W) -> std::io::Result<()> {
-        self.as_u128().serialize(dst)
+    fn encode<W: std::io::Write>(&self, dst: &mut W) -> std::io::Result<()> {
+        self.as_u128().encode(dst)
     }
 }
 
-impl ProtocolSupportDeserializer for Uuid {
-    fn deserialize<R: std::io::Read>(src: &mut R) -> std::io::Result<Self> {
-        Ok(Uuid::from_u128(ProtocolSupportDeserializer::deserialize(
+impl ProtocolSupportDecoder for Uuid {
+    fn decode<R: std::io::Read>(src: &mut R) -> std::io::Result<Self> {
+        Ok(Uuid::from_u128(ProtocolSupportDecoder::decode(
             src,
         )?))
     }

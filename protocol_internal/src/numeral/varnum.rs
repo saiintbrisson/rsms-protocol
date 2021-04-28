@@ -25,7 +25,7 @@ impl VarNum<i32> {
         else { 1 }
     }
 
-    pub fn serialize<W: std::io::Write>(value: &i32, dst: &mut W) -> io::Result<()> {
+    pub fn encode<W: std::io::Write>(value: &i32, dst: &mut W) -> io::Result<()> {
         let mut temp = *value;
 
         loop {
@@ -43,7 +43,7 @@ impl VarNum<i32> {
         Ok(())
     }
 
-    pub fn deserialize<R: std::io::Read>(src: &mut R) -> io::Result<i32> {
+    pub fn decode<R: std::io::Read>(src: &mut R) -> io::Result<i32> {
         let mut result = 0i32;
 
         for i in &VarNum::<i32>::NUM_SHIFT[..5] {
@@ -75,11 +75,11 @@ impl VarNum<i64> {
         else { 1 }
     }
 
-    pub fn serialize<W: std::io::Write>(_value: &i64, _dst: &mut W) -> io::Result<()> {
+    pub fn encode<W: std::io::Write>(_value: &i64, _dst: &mut W) -> io::Result<()> {
         Ok(())
     }
 
-    pub fn deserialize<R: std::io::Read>(_src: &mut R) -> io::Result<i64> {
+    pub fn decode<R: std::io::Read>(_src: &mut R) -> io::Result<i64> {
         Ok(0)
     }
 }
@@ -94,20 +94,20 @@ impl VarNum<Vec<i32>> {
         value.iter().fold(0, |acc, e| acc + VarNum::<i32>::calculate_len(e))
     }
 
-    pub fn serialize<W: std::io::Write>(value: &Vec<i32>, dst: &mut W) -> io::Result<()> {
+    pub fn encode<W: std::io::Write>(value: &Vec<i32>, dst: &mut W) -> io::Result<()> {
         for e in value {
-            VarNum::<i32>::serialize(e, dst)?;
+            VarNum::<i32>::encode(e, dst)?;
         }
 
         Ok(())
     }
 
-    pub fn deserialize<R: std::io::Read>(src: &mut R) -> io::Result<Vec<i32>> {
-        let len = VarNum::<i32>::deserialize(src)? as usize;
+    pub fn decode<R: std::io::Read>(src: &mut R) -> io::Result<Vec<i32>> {
+        let len = VarNum::<i32>::decode(src)? as usize;
 
         let mut buf = Vec::with_capacity(len);
         while buf.len() < buf.capacity() {
-            buf.push(VarNum::<i32>::deserialize(src)?);
+            buf.push(VarNum::<i32>::decode(src)?);
         }
 
         Ok(buf)

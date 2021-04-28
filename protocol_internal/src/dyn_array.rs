@@ -1,23 +1,23 @@
-use crate::{ProtocolSupportDeserializer, ProtocolSupportSerializer, RangeValidatedSupport};
+use crate::{ProtocolSupportDecoder, ProtocolSupportEncoder, RangeValidatedSupport};
 
 pub struct DynArray;
 
 impl DynArray {
     #[inline(always)]
-    pub fn calculate_len<T: ProtocolSupportSerializer>(value: &Vec<T>) -> usize {
+    pub fn calculate_len<T: ProtocolSupportEncoder>(value: &Vec<T>) -> usize {
         value
             .iter()
-            .map(<T as ProtocolSupportSerializer>::calculate_len)
+            .map(<T as ProtocolSupportEncoder>::calculate_len)
             .fold(0, |acc, x| acc + x)
     }
 
-    pub fn deserialize<R: std::io::Read, T: ProtocolSupportDeserializer>(
+    pub fn decode<R: std::io::Read, T: ProtocolSupportDecoder>(
         src: &mut R,
     ) -> std::io::Result<Vec<T>> {
         let mut buf = Vec::new();
 
         loop {
-            match <T as ProtocolSupportDeserializer>::deserialize(src) {
+            match <T as ProtocolSupportDecoder>::decode(src) {
                 Ok(out) => buf.push(out),
                 Err(err) => match err.kind() {
                     std::io::ErrorKind::UnexpectedEof => break,
@@ -29,20 +29,20 @@ impl DynArray {
         Ok(buf)
     }
 
-    pub fn serialize<W: std::io::Write, T: ProtocolSupportSerializer>(
+    pub fn encode<W: std::io::Write, T: ProtocolSupportEncoder>(
         value: &Vec<T>,
         dst: &mut W,
     ) -> std::io::Result<()> {
         for e in value {
-            <T as ProtocolSupportSerializer>::serialize(e, dst)?;
+            <T as ProtocolSupportEncoder>::encode(e, dst)?;
         }
 
         Ok(())
     }
 }
 
-impl<T: ProtocolSupportDeserializer> RangeValidatedSupport<Vec<T>> for DynArray {
-    fn deserialize<R: std::io::Read>(
+impl<T: ProtocolSupportDecoder> RangeValidatedSupport<Vec<T>> for DynArray {
+    fn decode<R: std::io::Read>(
         src: &mut R,
         min: usize,
         max: usize,
@@ -57,7 +57,7 @@ impl<T: ProtocolSupportDeserializer> RangeValidatedSupport<Vec<T>> for DynArray 
                 ));
             }
 
-            match <T as ProtocolSupportDeserializer>::deserialize(src) {
+            match <T as ProtocolSupportDecoder>::decode(src) {
                 Ok(out) => buf.push(out),
                 Err(err) => match err.kind() {
                     std::io::ErrorKind::UnexpectedEof => break,

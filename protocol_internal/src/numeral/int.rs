@@ -4,35 +4,35 @@ use crate::impl_range_validated_numeral;
 
 macro_rules! impl_numeral {
     ($n:ty, 1, $r:ident, $w:ident) => {
-        impl $crate::ProtocolSupportSerializer for $n {
+        impl $crate::ProtocolSupportEncoder for $n {
             fn calculate_len(&self) -> usize {
                 1
             }
 
-            fn serialize<W: std::io::Write>(&self, dst: &mut W) -> std::io::Result<()> {
+            fn encode<W: std::io::Write>(&self, dst: &mut W) -> std::io::Result<()> {
                 dst.$w(*self)
             }
         }
 
-        impl $crate::ProtocolSupportDeserializer for $n {
-            fn deserialize<R: std::io::Read>(src: &mut R) -> std::io::Result<$n> {
+        impl $crate::ProtocolSupportDecoder for $n {
+            fn decode<R: std::io::Read>(src: &mut R) -> std::io::Result<$n> {
                 src.$r()
             }
         }
     };
     ($n:ty, $s:expr, $r:ident, $w:ident) => {
-        impl $crate::ProtocolSupportSerializer for $n {
+        impl $crate::ProtocolSupportEncoder for $n {
             fn calculate_len(&self) -> usize {
                 $s
             }
 
-            fn serialize<W: std::io::Write>(&self, dst: &mut W) -> std::io::Result<()> {
+            fn encode<W: std::io::Write>(&self, dst: &mut W) -> std::io::Result<()> {
                 dst.$w::<BigEndian>(*self)
             }
         }
 
-        impl $crate::ProtocolSupportDeserializer for $n {
-            fn deserialize<R: std::io::Read>(src: &mut R) -> std::io::Result<$n> {
+        impl $crate::ProtocolSupportDecoder for $n {
+            fn decode<R: std::io::Read>(src: &mut R) -> std::io::Result<$n> {
                 src.$r::<BigEndian>()
             }
         }

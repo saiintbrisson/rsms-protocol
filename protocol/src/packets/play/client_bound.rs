@@ -188,18 +188,18 @@ pub enum PlayerListItem<'a> {
     RemovePlayer(Vec<Uuid>),
 }
 
-impl <'a> ProtocolSupportSerializer for PlayerListItem<'a> {
+impl <'a> ProtocolSupportEncoder for PlayerListItem<'a> {
     fn calculate_len(&self) -> usize {
         todo!()
     }
 
-    fn serialize<W: std::io::Write>(&self, _dst: &mut W) -> std::io::Result<()> {
+    fn encode<W: std::io::Write>(&self, _dst: &mut W) -> std::io::Result<()> {
         todo!()
     }
 }
 
-impl <'a> ProtocolSupportDeserializer for PlayerListItem<'a> {
-    fn deserialize<R: std::io::Read>(_src: &mut R) -> std::io::Result<Self> {
+impl <'a> ProtocolSupportDecoder for PlayerListItem<'a> {
+    fn decode<R: std::io::Read>(_src: &mut R) -> std::io::Result<Self> {
         todo!()
     }
 }

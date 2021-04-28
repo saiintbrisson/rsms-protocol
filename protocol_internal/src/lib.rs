@@ -23,20 +23,20 @@ pub use range_validation::RangeValidatedSupport;
 
 use std::io;
 
-pub trait PacketSerializer: std::fmt::Debug + ProtocolSupportSerializer {
+pub trait PacketEncoder: std::fmt::Debug + ProtocolSupportEncoder {
     fn calculate_len(&self) -> usize;
-    fn serialize<W: io::Write>(&self, dst: &mut W) -> io::Result<()>;
+    fn encode<W: io::Write>(&self, dst: &mut W) -> io::Result<()>;
 }
 
-pub trait PacketDeserializer: std::fmt::Debug + ProtocolSupportDeserializer {
-    fn deserialize<R: io::Read>(src: &mut R) -> io::Result<Self>;
+pub trait PacketDecoder: std::fmt::Debug + ProtocolSupportDecoder {
+    fn decode<R: io::Read>(src: &mut R) -> io::Result<Self>;
 }
 
-pub trait ProtocolSupportSerializer {
+pub trait ProtocolSupportEncoder {
     fn calculate_len(&self) -> usize;
-    fn serialize<W: io::Write>(&self, dst: &mut W) -> io::Result<()>;
+    fn encode<W: io::Write>(&self, dst: &mut W) -> io::Result<()>;
 }
 
-pub trait ProtocolSupportDeserializer: Sized {
-    fn deserialize<R: io::Read>(src: &mut R) -> io::Result<Self>;
+pub trait ProtocolSupportDecoder: Sized {
+    fn decode<R: io::Read>(src: &mut R) -> io::Result<Self>;
 }

@@ -1,30 +1,30 @@
-use crate::{ProtocolSupportDeserializer, ProtocolSupportSerializer};
+use crate::{ProtocolSupportDecoder, ProtocolSupportEncoder};
 
-impl<T> ProtocolSupportSerializer for Option<T>
+impl<T> ProtocolSupportEncoder for Option<T>
 where
-    T: ProtocolSupportSerializer,
+    T: ProtocolSupportEncoder,
 {
     fn calculate_len(&self) -> usize {
         1 + self.as_ref().map(|e| e.calculate_len()).unwrap_or_default()
     }
 
-    fn serialize<W: std::io::Write>(&self, dst: &mut W) -> std::io::Result<()> {
-        self.is_some().serialize(dst)?;
+    fn encode<W: std::io::Write>(&self, dst: &mut W) -> std::io::Result<()> {
+        self.is_some().encode(dst)?;
         if let Some(t) = self {
-            t.serialize(dst)?;
+            t.encode(dst)?;
         }
 
         Ok(())
     }
 }
 
-impl<T> ProtocolSupportDeserializer for Option<T>
+impl<T> ProtocolSupportDecoder for Option<T>
 where
-    T: ProtocolSupportDeserializer,
+    T: ProtocolSupportDecoder,
 {
-    fn deserialize<R: std::io::Read>(src: &mut R) -> std::io::Result<Self> {
-        if <bool as ProtocolSupportDeserializer>::deserialize(src)? {
-            return Ok(Some(T::deserialize(src)?));
+    fn decode<R: std::io::Read>(src: &mut R) -> std::io::Result<Self> {
+        if <bool as ProtocolSupportDecoder>::decode(src)? {
+            return Ok(Some(T::decode(src)?));
         }
 
         Ok(None)

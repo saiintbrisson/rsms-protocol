@@ -1,11 +1,11 @@
 use std::borrow::Cow;
 
-use crate::{ProtocolSupportDeserializer, ProtocolSupportSerializer};
+use crate::{ProtocolSupportDecoder, ProtocolSupportEncoder};
 
-impl<'a, T> ProtocolSupportSerializer for Cow<'a, T>
+impl<'a, T> ProtocolSupportEncoder for Cow<'a, T>
 where
-    T: ProtocolSupportSerializer + ToOwned + ?Sized,
-    T::Owned: ProtocolSupportSerializer 
+    T: ProtocolSupportEncoder + ToOwned + ?Sized,
+    T::Owned: ProtocolSupportEncoder 
 {
     fn calculate_len(&self) -> usize {
         match self {
@@ -14,20 +14,20 @@ where
         }
     }
 
-    fn serialize<W: std::io::Write>(&self, dst: &mut W) -> std::io::Result<()> {
+    fn encode<W: std::io::Write>(&self, dst: &mut W) -> std::io::Result<()> {
         match self {
-            Cow::Borrowed(b) => b.serialize(dst),
-            Cow::Owned(o) => o.serialize(dst),
+            Cow::Borrowed(b) => b.encode(dst),
+            Cow::Owned(o) => o.encode(dst),
         }
     }
 }
 
-impl<'a, T> ProtocolSupportDeserializer for Cow<'a, T>
+impl<'a, T> ProtocolSupportDecoder for Cow<'a, T>
 where
     T: ToOwned + ?Sized,
-    T::Owned: ProtocolSupportDeserializer
+    T::Owned: ProtocolSupportDecoder
 {
-    fn deserialize<R: std::io::Read>(src: &mut R) -> std::io::Result<Self> {
-        T::Owned::deserialize(src).map(Cow::Owned)
+    fn decode<R: std::io::Read>(src: &mut R) -> std::io::Result<Self> {
+        T::Owned::decode(src).map(Cow::Owned)
     }
 }

@@ -1,6 +1,6 @@
 use std::{fmt::Display, str::FromStr};
 
-use protocol_internal::{ProtocolPosition, ProtocolSupportDeserializer, ProtocolSupportSerializer};
+use protocol_internal::{ProtocolPosition, ProtocolSupportDecoder, ProtocolSupportEncoder};
 
 use crate::prelude::Cuboid;
 
@@ -9,7 +9,7 @@ pub type ChunkPosition = Vec2D<i32>;
 #[derive(Clone, Debug, Default, PartialEq, PartialOrd, protocol_derive::ProtocolSupport)]
 pub struct Vec2D<T>
 where
-    T: ProtocolSupportSerializer + ProtocolSupportDeserializer + PartialEq + PartialOrd,
+    T: ProtocolSupportEncoder + ProtocolSupportDecoder + PartialEq + PartialOrd,
 {
     pub x: T,
     pub z: T,
@@ -17,7 +17,7 @@ where
 
 impl<T> Vec2D<T>
 where
-    T: ProtocolSupportSerializer + ProtocolSupportDeserializer + PartialEq + PartialOrd,
+    T: ProtocolSupportEncoder + ProtocolSupportDecoder + PartialEq + PartialOrd,
 {
     pub fn new(x: T, z: T) -> Self {
         Self { x, z }
@@ -26,7 +26,7 @@ where
 
 impl<T> From<Vec3D<T>> for Vec2D<T>
 where
-    T: ProtocolSupportSerializer + ProtocolSupportDeserializer + PartialEq + PartialOrd,
+    T: ProtocolSupportEncoder + ProtocolSupportDecoder + PartialEq + PartialOrd,
 {
     fn from(Vec3D { x, z, .. }: Vec3D<T>) -> Self {
         Self::new(x, z)
@@ -35,7 +35,7 @@ where
 
 impl<T> ToString for Vec2D<T>
 where
-    T: ToString + ProtocolSupportSerializer + ProtocolSupportDeserializer + PartialEq + PartialOrd,
+    T: ToString + ProtocolSupportEncoder + ProtocolSupportDecoder + PartialEq + PartialOrd,
 {
     fn to_string(&self) -> String {
         format!("{};{}", self.x.to_string(), self.z.to_string())
@@ -44,7 +44,7 @@ where
 
 impl<T> FromStr for Vec2D<T>
 where
-    T: FromStr + ProtocolSupportSerializer + ProtocolSupportDeserializer + PartialEq + PartialOrd,
+    T: FromStr + ProtocolSupportEncoder + ProtocolSupportDecoder + PartialEq + PartialOrd,
 {
     type Err = Error<T::Err>;
 
@@ -65,7 +65,7 @@ pub type BlockPosition = Vec3D<i32>;
 #[derive(Clone, Debug, Default, PartialEq, PartialOrd, protocol_derive::ProtocolSupport)]
 pub struct Vec3D<T>
 where
-    T: ProtocolSupportSerializer + ProtocolSupportDeserializer + PartialEq + PartialOrd,
+    T: ProtocolSupportEncoder + ProtocolSupportDecoder + PartialEq + PartialOrd,
 {
     pub x: T,
     pub y: T,
@@ -74,7 +74,7 @@ where
 
 impl<T> Vec3D<T>
 where
-    T: ProtocolSupportSerializer + ProtocolSupportDeserializer + PartialEq + PartialOrd,
+    T: ProtocolSupportEncoder + ProtocolSupportDecoder + PartialEq + PartialOrd,
 {
     pub fn new(x: T, y: T, z: T) -> Self {
         Self { x, y, z }
@@ -89,7 +89,7 @@ impl Vec3D<i32> {
 
 impl<T> From<Vec2D<T>> for Vec3D<T>
 where
-    T: ProtocolSupportSerializer + ProtocolSupportDeserializer + Default + PartialEq + PartialOrd,
+    T: ProtocolSupportEncoder + ProtocolSupportDecoder + Default + PartialEq + PartialOrd,
 {
     fn from(Vec2D { x, z }: Vec2D<T>) -> Self {
         Self::new(x, T::default(), z)
@@ -111,7 +111,7 @@ impl ProtocolPosition for Vec3D<i32> {
 
 impl<T> ToString for Vec3D<T>
 where
-    T: ToString + ProtocolSupportSerializer + ProtocolSupportDeserializer + PartialEq + PartialOrd,
+    T: ToString + ProtocolSupportEncoder + ProtocolSupportDecoder + PartialEq + PartialOrd,
 {
     fn to_string(&self) -> String {
         format!(
@@ -125,7 +125,7 @@ where
 
 impl<T> FromStr for Vec3D<T>
 where
-    T: FromStr + ProtocolSupportSerializer + ProtocolSupportDeserializer + PartialEq + PartialOrd,
+    T: FromStr + ProtocolSupportEncoder + ProtocolSupportDecoder + PartialEq + PartialOrd,
 {
     type Err = Error<T::Err>;
 

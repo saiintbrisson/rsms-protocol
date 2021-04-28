@@ -48,16 +48,16 @@ fn parse_fields(FieldsNamed { named, .. }: &FieldsNamed, packet_id: Option<i32>)
     let v_calc_len = fields.iter().map(FieldOptions::calculate_len);
     let calc_len = quote! { 0 #(+ #v_calc_len)* };
 
-    let v_serialize = fields.iter().map(FieldOptions::serialize);
+    let v_encode = fields.iter().map(FieldOptions::encode);
     let ser = quote! {
-        #(#v_serialize)*
+        #(#v_encode)*
         Ok(())
     };
 
-    let v_deserialize = fields.iter().map(FieldOptions::deserialize);
+    let v_decode = fields.iter().map(FieldOptions::decode);
     let de = quote! {
         Ok(Self {
-            #(#v_deserialize)*
+            #(#v_decode)*
         })
     };
 

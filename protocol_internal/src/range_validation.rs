@@ -1,10 +1,10 @@
-use crate::ProtocolSupportDeserializer;
+use crate::ProtocolSupportDecoder;
 
 pub trait RangeValidatedSupport<T = Self>
 where
-    T: ProtocolSupportDeserializer + Sized,
+    T: ProtocolSupportDecoder + Sized,
 {
-    fn deserialize<R: std::io::Read>(src: &mut R, min: usize, max: usize) -> std::io::Result<T>;
+    fn decode<R: std::io::Read>(src: &mut R, min: usize, max: usize) -> std::io::Result<T>;
 }
 
 #[macro_export]
@@ -12,12 +12,12 @@ macro_rules! impl_range_validated_numeral {
     ($n:ty, VarNum) => {
         impl $crate::RangeValidatedSupport<$n> for $crate::VarNum<$n> {
             #[inline(always)]
-            fn deserialize<R: std::io::Read>(
+            fn decode<R: std::io::Read>(
                 src: &mut R,
                 min: usize,
                 max: usize,
             ) -> std::io::Result<$n> {
-                let value = $crate::VarNum::<$n>::deserialize(src)?;
+                let value = $crate::VarNum::<$n>::decode(src)?;
 
                 if min != 0 && min as $n > value {
                     return Err(std::io::Error::new(
@@ -40,12 +40,12 @@ macro_rules! impl_range_validated_numeral {
     ($n:ty) => {
         impl $crate::RangeValidatedSupport for $n {
             #[inline(always)]
-            fn deserialize<R: std::io::Read>(
+            fn decode<R: std::io::Read>(
                 src: &mut R,
                 min: usize,
                 max: usize,
             ) -> std::io::Result<Self> {
-                let value = <$n as $crate::ProtocolSupportDeserializer>::deserialize(src)?;
+                let value = <$n as $crate::ProtocolSupportDecoder>::decode(src)?;
 
                 if min != 0 && min as $n > value {
                     return Err(std::io::Error::new(

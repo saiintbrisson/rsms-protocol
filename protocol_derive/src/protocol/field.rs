@@ -21,16 +21,16 @@ impl<'a> FieldOptions<'a> {
         }
     }
 
-    pub fn serialize(&self) -> TokenStream {
+    pub fn encode(&self) -> TokenStream {
         let ident = &self.ident;
         let path = self.protocol_type.get_path_ser(&self.ty);
         match self.is_struct {
-            true => quote! { #path::serialize(&self.#ident, &mut dst)?; },
-            false => quote! { #path::serialize(#ident, &mut dst)?; },
+            true => quote! { #path::encode(&self.#ident, &mut dst)?; },
+            false => quote! { #path::encode(#ident, &mut dst)?; },
         }
     }
 
-    pub fn deserialize(&self) -> TokenStream {
+    pub fn decode(&self) -> TokenStream {
         let ident = &self.ident;
 
         let method = if let Some(validator) = &self.validator {
@@ -41,10 +41,10 @@ impl<'a> FieldOptions<'a> {
                 _ => self.protocol_type.get_path_de(&self.ty),
             };
 
-            validator.deserialize(&path)
+            validator.decode(&path)
         } else {
             let path = self.protocol_type.get_path_de(&self.ty);
-            quote! { #path::deserialize(&mut src) }
+            quote! { #path::decode(&mut src) }
         };
 
         quote! {
@@ -61,18 +61,18 @@ pub(crate) enum FieldValidator {
 }
 
 impl FieldValidator {
-    pub fn deserialize(&self, path: &TokenStream) -> proc_macro2::TokenStream {
+    pub fn decode(&self, path: &TokenStream) -> proc_macro2::TokenStream {
         match self {
             FieldValidator::Fixed(len) => quote! {
-                #path::deserialize(&mut src, #len)
+                #path::decode(&mut src, #len)
             },
             FieldValidator::Range { min, max } => quote! {
-                #path::deserialize(&mut src, #min, #max)
+                #path::decode(&mut src, #min, #max)
             },
             FieldValidator::Regex(regex) => quote! {
                 {
                     ::lazy_static::lazy_static! { static ref REGEX: ::regex::Regex = regex::Regex::new(#regex).unwrap(); };
-                    #path::deserialize(&mut src, &REGEX)
+                    #path::decode(&mut src, &REGEX)
                 }
             },
         }
@@ -96,7 +96,7 @@ impl FieldType {
             FieldType::Position => quote! { ::protocol_internal::ProtocolPositionSupport },
             FieldType::DynArray => quote! { ::protocol_internal::DynArray },
             _ => {
-                quote! { <#ty as ::protocol_internal::ProtocolSupportSerializer> }
+                quote! { <#ty as ::protocol_internal::ProtocolSupportEncoder> }
             }
         }
     }
@@ -109,7 +109,7 @@ impl FieldType {
             FieldType::Fixed => quote! { ::protocol_internal::FixedVec },
             FieldType::Regex => quote! { ::protocol_internal::Regex },
             FieldType::Default => {
-                quote! { <#ty as ::protocol_internal::ProtocolSupportDeserializer> }
+                quote! { <#ty as ::protocol_internal::ProtocolSupportDecoder> }
             }
         }
     }

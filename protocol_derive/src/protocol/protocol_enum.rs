@@ -64,7 +64,7 @@ pub(crate) fn expand_enum(
     let ty_path = if is_varnum {
         quote! { ::protocol_internal::VarNum::<#ty> }
     } else {
-        quote! { <#ty as ::protocol_internal::ProtocolSupportDeserializer> }
+        quote! { <#ty as ::protocol_internal::ProtocolSupportDecoder> }
     };
 
     Ok(Item {
@@ -72,7 +72,7 @@ pub(crate) fn expand_enum(
             quote! { match self { #(#calc_len)* } },
             quote! { match self { #(#encode)* } Ok(()) },
             quote! {
-                Ok(match #ty_path::deserialize(src)? {
+                Ok(match #ty_path::decode(src)? {
                     #(#decode)*
                     discriminant => {
                         return Err(std::io::Error::new(
@@ -131,7 +131,7 @@ fn extract_variant_discriminant(variant: &Variant) -> syn::Result<Expr> {
 fn expand_variant_calculate_len(is_varnum: bool, ty: &Ident, i: &Expr, ident: &Ident, fields: &Vec<FieldOptions>) -> TokenStream {
     let id_cl = match is_varnum {
         true => quote! { ::protocol_internal::VarNum::<#ty>::calculate_len(&(#i)) },
-        false => quote! { <#ty as ::protocol_internal::ProtocolSupportSerializer>::calculate_len(&(#i)) },
+        false => quote! { <#ty as ::protocol_internal::ProtocolSupportEncoder>::calculate_len(&(#i)) },
     };
 
     let calculate_len = fields.iter().map(FieldOptions::calculate_len);
@@ -146,11 +146,11 @@ fn expand_variant_calculate_len(is_varnum: bool, ty: &Ident, i: &Expr, ident: &I
 
 fn expand_variant_encode(is_varnum: bool, ty: &Ident, i: &Expr, ident: &Ident, fields: &Vec<FieldOptions>) -> TokenStream {
     let id_encode = match is_varnum {
-        true => quote! { ::protocol_internal::VarNum::<#ty>::serialize(&(#i), dst)?; },
-        false => quote! { <#ty as ::protocol_internal::ProtocolSupportSerializer>::serialize(&(#i), dst)?; },
+        true => quote! { ::protocol_internal::VarNum::<#ty>::encode(&(#i), dst)?; },
+        false => quote! { <#ty as ::protocol_internal::ProtocolSupportEncoder>::encode(&(#i), dst)?; },
     };
 
-    let encode = fields.iter().map(FieldOptions::serialize);
+    let encode = fields.iter().map(FieldOptions::encode);
     let fields = fields.iter().map(|f| f.ident);
 
     quote! {
@@ -162,7 +162,7 @@ fn expand_variant_encode(is_varnum: bool, ty: &Ident, i: &Expr, ident: &Ident, f
 }
 
 fn expand_variant_decode(i: &Expr, ident: &Ident, fields: &Vec<FieldOptions>) -> TokenStream {
-    let decode = fields.iter().map(FieldOptions::deserialize);
+    let decode = fields.iter().map(FieldOptions::decode);
 
     quote! {
         #i => Self::#ident {

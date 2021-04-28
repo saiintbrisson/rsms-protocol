@@ -20,11 +20,11 @@ impl<T: ProtocolPosition> ProtocolPositionSupport<T> {
         8
     }
 
-    pub fn serialize<W: std::io::Write>(value: &T, dst: &mut W) -> std::io::Result<()> {
+    pub fn encode<W: std::io::Write>(value: &T, dst: &mut W) -> std::io::Result<()> {
         dst.write_i64::<BigEndian>(ProtocolPosition::to_position(value))
     }
 
-    pub fn deserialize<R: std::io::Read>(src: &mut R) -> std::io::Result<T> {
+    pub fn decode<R: std::io::Read>(src: &mut R) -> std::io::Result<T> {
         Ok(ProtocolPosition::from_position(
             src.read_i64::<BigEndian>()?,
         ))

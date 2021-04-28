@@ -36,43 +36,43 @@ pub(crate) fn expand(
 
     if let Some(id) = packet_id {
         output.append_all(quote! {
-            impl #impl_generics ::protocol_internal::PacketSerializer for #ident #ty_generics #where_clause {
+            impl #impl_generics ::protocol_internal::PacketEncoder for #ident #ty_generics #where_clause {
                 fn calculate_len(&self) -> usize {
-                    ::protocol_internal::VarNum::<i32>::calculate_len(&#id) + ::protocol_internal::ProtocolSupportSerializer::calculate_len(self)
+                    ::protocol_internal::VarNum::<i32>::calculate_len(&#id) + ::protocol_internal::ProtocolSupportEncoder::calculate_len(self)
                 }
 
-                fn serialize<W: std::io::Write>(&self, mut dst: &mut W) -> std::io::Result<()> {
-                    ::protocol_internal::VarNum::<i32>::serialize(&#id, dst)?;
-                    ::protocol_internal::ProtocolSupportSerializer::serialize(self, dst)
+                fn encode<W: std::io::Write>(&self, mut dst: &mut W) -> std::io::Result<()> {
+                    ::protocol_internal::VarNum::<i32>::encode(&#id, dst)?;
+                    ::protocol_internal::ProtocolSupportEncoder::encode(self, dst)
                 }
             }
 
-            impl #impl_generics ::protocol_internal::PacketDeserializer for #ident #ty_generics #where_clause {
-                fn deserialize<R: std::io::Read>(mut src: &mut R) -> std::io::Result<Self> {
-                    let id = ::protocol_internal::VarNum::<i32>::deserialize(src)?;
+            impl #impl_generics ::protocol_internal::PacketDecoder for #ident #ty_generics #where_clause {
+                fn decode<R: std::io::Read>(mut src: &mut R) -> std::io::Result<Self> {
+                    let id = ::protocol_internal::VarNum::<i32>::decode(src)?;
                     if id != #id {
                         return Err(std::io::Error::new(std::io::ErrorKind::InvalidInput, format!("expected id {}, got {}", #id, id)));
                     }
     
-                    ::protocol_internal::ProtocolSupportDeserializer::deserialize(src)
+                    ::protocol_internal::ProtocolSupportDecoder::decode(src)
                 }
             }
         })
     }
 
     output.append_all(quote! {
-        impl #impl_generics ::protocol_internal::ProtocolSupportSerializer for #ident #ty_generics #where_clause {
+        impl #impl_generics ::protocol_internal::ProtocolSupportEncoder for #ident #ty_generics #where_clause {
             fn calculate_len(&self) -> usize {
                 #calc_len
             }
 
-            fn serialize<W: std::io::Write>(&self, mut dst: &mut W) -> std::io::Result<()> {
+            fn encode<W: std::io::Write>(&self, mut dst: &mut W) -> std::io::Result<()> {
                 #ser
             }
         }
 
-        impl #impl_generics ::protocol_internal::ProtocolSupportDeserializer for #ident #ty_generics #where_clause {
-            fn deserialize<R: std::io::Read>(mut src: &mut R) -> std::io::Result<Self> {
+        impl #impl_generics ::protocol_internal::ProtocolSupportDecoder for #ident #ty_generics #where_clause {
+            fn decode<R: std::io::Read>(mut src: &mut R) -> std::io::Result<Self> {
                 #de
             }
         }
