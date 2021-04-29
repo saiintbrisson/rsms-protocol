@@ -7,8 +7,6 @@ edition = "2018"
 # See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
 
 [dependencies]
-protocol_internal = { path = "../protocol_internal" }
-
 proc-macro2 = "1.0.24"
 quote = "1.0.9"
 syn = { version = "1.0.63", features = ["extra-traits", "full"] }
