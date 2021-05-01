@@ -6,7 +6,7 @@ pub enum ProtocolDirection {
 }
 
 impl ProtocolDirection {
-    fn opposite(&self) -> Self {
+    pub fn opposite(&self) -> Self {
         match self {
             Self::ClientBound => Self::ServerBound,
             Self::ServerBound => Self::ClientBound,
