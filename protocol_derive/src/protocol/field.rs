@@ -183,7 +183,7 @@ pub(crate) fn parse_field(field: &Field) -> crate::Result<FieldOptions> {
 
 fn parse_field_meta(attr: &Attribute) -> Result<(Option<FieldValidator>, FieldType), Error> {
     let meta_items = match attr.parse_meta()? {
-        syn::Meta::List(list) => list.nested.into_iter().collect::<Vec<_>>(),
+        syn::Meta::List(list) => list.nested.into_iter(),
         _ => {
             return Err(syn::Error::new(
                 attr.span(),
@@ -354,3 +354,69 @@ fn extract_fixed(value: &syn::MetaNameValue) -> crate::Result<FieldValidator> {
     Ok(FieldValidator::Fixed(int))
 }
 
+pub fn extract_packet_range(attrs: &Vec<Attribute>) -> (Option<i32>, Option<i32>) {
+    let attr = match attrs
+        .iter()
+        .find(|attr| attr.path == parse_quote!(packet_size))
+    {
+        Some(attr) => attr,
+        None => return (None, None),
+    };
+
+    let meta_items = match attr.parse_meta().unwrap() {
+        syn::Meta::List(list) => list.nested.into_iter(),
+        _ => return (None, None)
+    };
+    
+    let mut min = None;
+    let mut max = None;
+
+    for meta_item in meta_items {
+        match meta_item {
+            syn::NestedMeta::Meta(syn::Meta::NameValue(value)) => {
+                let int: i32 = match &value.lit {
+                    syn::Lit::Int(int) => int,
+                    _ => return (None, None),
+                }
+                .base10_parse().unwrap();
+
+                match value
+                    .path
+                    .get_ident()
+                    .unwrap()
+                    .to_string()
+                    .as_str()
+                {
+                    "min" => min = Some(int),
+                    "max" => max = Some(int),
+                    "eq" => {
+                        min = Some(int);
+                        max = Some(int);
+                    }
+                    _ => return (None, None),
+                }
+            }
+            _ => return (None, None),
+        }
+    }
+
+    (min, max)
+}
+
+pub fn extract_packet_id(attrs: &Vec<Attribute>) -> syn::Result<Option<i32>> {
+    let meta = match attrs
+        .iter()
+        .find(|attr| attr.path == parse_quote!(packet))
+    {
+        Some(attr) => attr.parse_meta()?,
+        None => return Ok(None),
+    };
+
+    Ok(Some(match &meta {
+        syn::Meta::List(meta) => match meta.nested.iter().next() {
+            Some(syn::NestedMeta::Lit(syn::Lit::Int(id))) => id.base10_parse::<i32>()?,
+            _ => return Err(syn::Error::new_spanned(meta, "packet expected id")),
+        },
+        _ => return Err(syn::Error::new_spanned(meta, "packet expected id")),
+    }))
+}

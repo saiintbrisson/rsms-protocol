@@ -30,6 +30,12 @@ pub trait PacketEncoder: std::fmt::Debug + ProtocolSupportEncoder {
 
 pub trait PacketDecoder: std::fmt::Debug + ProtocolSupportDecoder {
     fn decode<R: io::Read>(src: &mut R) -> io::Result<Self>;
+    fn min_size() -> i32 {
+        -1
+    }
+    fn max_size() -> i32 {
+        -1
+    }
 }
 
 pub trait ProtocolSupportEncoder {

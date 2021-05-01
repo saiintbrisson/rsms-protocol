@@ -1,5 +1,5 @@
 use quote::quote;
-use syn::{parse_quote, spanned::Spanned, Attribute, Error, FieldsNamed};
+use syn::{spanned::Spanned, Attribute, FieldsNamed};
 
 use super::{field::FieldOptions, Item};
 
@@ -7,25 +7,16 @@ pub(crate) fn expand_struct(
     data_struct: &syn::DataStruct,
     attrs: &Vec<Attribute>,
 ) -> crate::Result<Item> {
-    let packet_id = match attrs.iter().find(|attr| attr.path == parse_quote!(packet)) {
-        Some(attr) => match attr.parse_meta()? {
-            syn::Meta::List(meta) => match meta.nested.into_iter().collect::<Vec<_>>().first() {
-                Some(syn::NestedMeta::Lit(syn::Lit::Int(id))) => match id.base10_parse::<i32>() {
-                    Ok(id) => Some(id),
-                    _ => return Err(Error::new_spanned(attr, "packet expected id")),
-                },
-                _ => return Err(Error::new_spanned(attr, "packet expected id")),
-            },
-            _ => return Err(Error::new_spanned(attr, "packet expected id")),
-        },
-        _ => None,
-    };
+    let packet_id = super::field::extract_packet_id(attrs)?;
+    let (min_size, max_size) = super::field::extract_packet_range(attrs);
 
     match &data_struct.fields {
-        syn::Fields::Named(named) => parse_fields(&named, packet_id),
+        syn::Fields::Named(named) => parse_fields(&named, packet_id, min_size, max_size),
         syn::Fields::Unit => Ok(Item {
             protocol_support: (quote! { 0 }, quote! { Ok(()) }, quote! { Ok(Self) }),
             packet_id,
+            min_size,
+            max_size
         }),
         _ => {
             return Err(syn::Error::new(
@@ -36,7 +27,12 @@ pub(crate) fn expand_struct(
     }
 }
 
-fn parse_fields(FieldsNamed { named, .. }: &FieldsNamed, packet_id: Option<i32>) -> crate::Result<Item> {
+fn parse_fields(
+    FieldsNamed { named, .. }: &FieldsNamed, 
+    packet_id: Option<i32>, 
+    min_size: Option<i32>, 
+    max_size: Option<i32>
+) -> crate::Result<Item> {
     let mut fields = vec![];
     for field in named {
         let mut value = super::field::parse_field(field)?;
@@ -64,5 +60,7 @@ fn parse_fields(FieldsNamed { named, .. }: &FieldsNamed, packet_id: Option<i32>)
     Ok(Item {
         protocol_support: (calc_len, ser, de),
         packet_id,
+        min_size,
+        max_size
     })
 }

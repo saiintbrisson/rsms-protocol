@@ -2,6 +2,7 @@ use std::fmt::Display;
 
 #[derive(Debug, protocol_derive::ProtocolSupport)]
 #[packet(0x00)]
+#[packet_size(max = 1030)]
 pub struct Handshake {
     #[protocol_field(varnum)]
     pub protocol_version: i32,

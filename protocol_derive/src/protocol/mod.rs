@@ -9,6 +9,8 @@ use syn::{spanned::Spanned, DeriveInput};
 pub struct Item {
     pub protocol_support: (TokenStream, TokenStream, TokenStream),
     pub packet_id: Option<i32>,
+    pub min_size: Option<i32>,
+    pub max_size: Option<i32>,
 }
 
 pub(crate) fn expand(
@@ -23,7 +25,12 @@ pub(crate) fn expand(
     let mut output = TokenStream::new();
     let (impl_generics, ty_generics, where_clause) = generics.split_for_impl();
 
-    let Item { protocol_support: (calc_len, ser, de), packet_id } = match &data {
+    let Item { 
+        protocol_support: (calc_len, ser, de), 
+        packet_id,
+        min_size,
+        max_size,
+    } = match &data {
         syn::Data::Struct(data_struct) => protocol_struct::expand_struct(data_struct, attrs),
         syn::Data::Enum(data_enum) => protocol_enum::expand_enum(ident, &data_enum, attrs),
         _ => {
@@ -35,6 +42,18 @@ pub(crate) fn expand(
     }?;
 
     if let Some(id) = packet_id {
+        let min_size = min_size.map(|size| quote! {
+            fn min_size() -> i32 {
+                #size
+            }
+        });
+
+        let max_size = max_size.map(|size| quote! {
+            fn max_size() -> i32 {
+                #size
+            }
+        });
+
         output.append_all(quote! {
             impl #impl_generics ::protocol_internal::PacketEncoder for #ident #ty_generics #where_clause {
                 fn calculate_len(&self) -> usize {
@@ -56,6 +75,9 @@ pub(crate) fn expand(
     
                     ::protocol_internal::ProtocolSupportDecoder::decode(src)
                 }
+
+                #min_size
+                #max_size
             }
         })
     }

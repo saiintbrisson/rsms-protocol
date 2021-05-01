@@ -2,6 +2,7 @@ use misc::misc::chat::ChatComponent;
 
 #[derive(Debug, protocol_derive::ProtocolSupport)]
 #[packet(0x00)]
+#[packet_size(max = 17)]
 pub struct LoginStart {
     #[protocol_field(regex(r"^([\w]{1,16})$"))]
     pub username: String,
@@ -9,6 +10,7 @@ pub struct LoginStart {
 
 #[derive(Debug, protocol_derive::ProtocolSupport)]
 #[packet(0x01)]
+#[packet_size(min = 261, max = 1282)]
 pub struct EncryptionRequest {
     pub server_id: String,
     pub public_key: Vec<u8>,
@@ -23,6 +25,7 @@ pub struct Disconnect {
 
 #[derive(Debug, protocol_derive::ProtocolSupport)]
 #[packet(0x01)]
+#[packet_size(eq = 260)]
 pub struct EncryptionResponse {
     pub shared_secret: Vec<u8>,
     pub verify_token: Vec<u8>,
@@ -30,6 +33,7 @@ pub struct EncryptionResponse {
 
 #[derive(Debug, protocol_derive::ProtocolSupport)]
 #[packet(0x02)]
+#[packet_size(max = 54)]
 pub struct LoginSuccess {
     #[protocol_field(range(eq = 36))]
     pub uuid: String,
@@ -39,6 +43,7 @@ pub struct LoginSuccess {
 
 #[derive(Debug, protocol_derive::ProtocolSupport)]
 #[packet(0x03)]
+#[packet_size(max = 5)]
 pub struct SetCompression {
     #[protocol_field(varnum)]
     pub threshold: i32,

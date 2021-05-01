@@ -18,20 +18,9 @@ pub(crate) fn expand_enum(
     };
     let is_varnum = extract_varnum(attrs);
 
-    let packet_id = match attrs.iter().find(|attr| attr.path == parse_quote!(packet)) {
-        Some(attr) => match attr.parse_meta()? {
-            syn::Meta::List(meta) => match meta.nested.into_iter().collect::<Vec<_>>().first() {
-                Some(syn::NestedMeta::Lit(syn::Lit::Int(id))) => match id.base10_parse::<i32>() {
-                    Ok(id) => Some(id),
-                    _ => return Err(syn::Error::new_spanned(attr, "packet expected id")),
-                },
-                _ => return Err(syn::Error::new_spanned(attr, "packet expected id")),
-            },
-            _ => return Err(syn::Error::new_spanned(attr, "packet expected id")),
-        },
-        _ => None,
-    };
-    
+    let packet_id = super::field::extract_packet_id(attrs)?;
+    let (min_size, max_size) = super::field::extract_packet_range(attrs);
+
     let mut calc_len: Vec<TokenStream> = Vec::new();
     let mut encode: Vec<TokenStream> = Vec::new();
     let mut decode: Vec<TokenStream> = Vec::new();
@@ -82,7 +71,9 @@ pub(crate) fn expand_enum(
                     }
                 })
             }),
-        packet_id
+        packet_id,
+        min_size,
+        max_size,
     })
 }
 

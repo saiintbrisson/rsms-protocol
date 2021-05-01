@@ -9,7 +9,7 @@ use syn::{parse_macro_input, AttributeArgs, DeriveInput, Error, ItemMod};
 
 type Result<T = proc_macro2::TokenStream> = std::result::Result<T, Error>;
 
-#[proc_macro_derive(ProtocolSupport, attributes(protocol_field, packet))]
+#[proc_macro_derive(ProtocolSupport, attributes(protocol_field, packet, packet_size))]
 pub fn derive_protocol_support(input: TokenStream) -> TokenStream {
     let mut derive_input = parse_macro_input!(input as DeriveInput);
 
