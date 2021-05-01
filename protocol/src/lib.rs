@@ -13,3 +13,7 @@ pub mod packets {
     pub mod play;
     pub mod status;
 }
+
+pub mod protocol_direction;
+pub mod protocol_state;
+pub mod protocol_version;
