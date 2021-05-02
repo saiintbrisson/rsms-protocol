@@ -2,7 +2,7 @@
 #[derive(Clone, Copy, Debug)]
 pub enum ProtocolDirection {
     ClientBound,
-    ServerBound
+    ServerBound,
 }
 
 impl ProtocolDirection {

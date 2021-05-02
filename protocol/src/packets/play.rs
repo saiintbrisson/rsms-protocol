@@ -1,5 +1,5 @@
 use misc::prelude::{
-    BlockPosition, ChatComponent, ChatMode, ChatPosition, ChunkPosition, Difficulty, Dimension, 
+    BlockPosition, ChatComponent, ChatMode, ChatPosition, ChunkPosition, Difficulty, Dimension,
     DisplayedSkinParts, EntityLocation, GameMode, Property, Vec2D, Vec3D,
 };
 use protocol_internal::{ProtocolSupportDecoder, ProtocolSupportEncoder};
@@ -13,8 +13,8 @@ pub use server_bound::ServerBound;
 
 #[cfg(test)]
 mod test {
-    use protocol_internal::{PacketEncoder, ProtocolSupportEncoder};
     use misc::prelude::*;
+    use protocol_internal::{PacketEncoder, ProtocolSupportEncoder, ProtocolVersionEnum};
 
     #[test]
     fn test_join_game() {
@@ -28,7 +28,13 @@ mod test {
             reduced_debug_info: false,
         });
 
-        assert_eq!(ProtocolSupportEncoder::calculate_len(&join_game), 10);
-        assert_eq!(PacketEncoder::calculate_len(&join_game), 11);
+        assert_eq!(
+            ProtocolSupportEncoder::calculate_len(&join_game, &ProtocolVersionEnum::V1_8.into()),
+            10
+        );
+        assert_eq!(
+            PacketEncoder::calculate_len(&join_game, &ProtocolVersionEnum::V1_8.into()),
+            11
+        );
     }
 }

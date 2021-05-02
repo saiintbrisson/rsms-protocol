@@ -5,34 +5,48 @@ use crate::impl_range_validated_numeral;
 macro_rules! impl_numeral {
     ($n:ty, 1, $r:ident, $w:ident) => {
         impl $crate::ProtocolSupportEncoder for $n {
-            fn calculate_len(&self) -> usize {
+            fn calculate_len(&self, _: &crate::ProtocolVersion) -> usize {
                 1
             }
 
-            fn encode<W: std::io::Write>(&self, dst: &mut W) -> std::io::Result<()> {
+            fn encode<W: std::io::Write>(
+                &self,
+                dst: &mut W,
+                _: &crate::ProtocolVersion,
+            ) -> std::io::Result<()> {
                 dst.$w(*self)
             }
         }
 
         impl $crate::ProtocolSupportDecoder for $n {
-            fn decode<R: std::io::Read>(src: &mut R) -> std::io::Result<$n> {
+            fn decode<R: std::io::Read + AsRef<[u8]>>(
+                src: &mut std::io::Cursor<R>,
+                _: &$crate::ProtocolVersion,
+            ) -> std::io::Result<$n> {
                 src.$r()
             }
         }
     };
     ($n:ty, $s:expr, $r:ident, $w:ident) => {
         impl $crate::ProtocolSupportEncoder for $n {
-            fn calculate_len(&self) -> usize {
+            fn calculate_len(&self, _: &crate::ProtocolVersion) -> usize {
                 $s
             }
 
-            fn encode<W: std::io::Write>(&self, dst: &mut W) -> std::io::Result<()> {
+            fn encode<W: std::io::Write>(
+                &self,
+                dst: &mut W,
+                _: &crate::ProtocolVersion,
+            ) -> std::io::Result<()> {
                 dst.$w::<BigEndian>(*self)
             }
         }
 
         impl $crate::ProtocolSupportDecoder for $n {
-            fn decode<R: std::io::Read>(src: &mut R) -> std::io::Result<$n> {
+            fn decode<R: std::io::Read + AsRef<[u8]>>(
+                src: &mut std::io::Cursor<R>,
+                _: &$crate::ProtocolVersion,
+            ) -> std::io::Result<$n> {
                 src.$r::<BigEndian>()
             }
         }

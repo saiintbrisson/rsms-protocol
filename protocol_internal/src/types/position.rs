@@ -24,7 +24,9 @@ impl<T: ProtocolPosition> ProtocolPositionSupport<T> {
         dst.write_i64::<BigEndian>(ProtocolPosition::to_position(value))
     }
 
-    pub fn decode<R: std::io::Read>(src: &mut R) -> std::io::Result<T> {
+    pub fn decode<R: std::io::Read + AsRef<[u8]>>(
+        src: &mut std::io::Cursor<R>,
+    ) -> std::io::Result<T> {
         Ok(ProtocolPosition::from_position(
             src.read_i64::<BigEndian>()?,
         ))
@@ -41,7 +43,7 @@ impl<T: ProtocolPosition> ProtocolPosition for Option<T> {
 
     fn from_position(position: i64) -> Self
     where
-        Self: Sized 
+        Self: Sized,
     {
         Some(T::from_position(position))
     }

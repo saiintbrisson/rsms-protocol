@@ -188,18 +188,25 @@ pub enum PlayerListItem<'a> {
     RemovePlayer(Vec<Uuid>),
 }
 
-impl <'a> ProtocolSupportEncoder for PlayerListItem<'a> {
-    fn calculate_len(&self) -> usize {
+impl<'a> ProtocolSupportEncoder for PlayerListItem<'a> {
+    fn calculate_len(&self, _version: &::protocol_internal::ProtocolVersion) -> usize {
         todo!()
     }
 
-    fn encode<W: std::io::Write>(&self, _dst: &mut W) -> std::io::Result<()> {
+    fn encode<W: std::io::Write>(
+        &self,
+        _dst: &mut W,
+        _version: &::protocol_internal::ProtocolVersion,
+    ) -> std::io::Result<()> {
         todo!()
     }
 }
 
-impl <'a> ProtocolSupportDecoder for PlayerListItem<'a> {
-    fn decode<R: std::io::Read>(_src: &mut R) -> std::io::Result<Self> {
+impl<'a> ProtocolSupportDecoder for PlayerListItem<'a> {
+    fn decode<R: std::io::Read + AsRef<[u8]>>(
+        _src: &mut std::io::Cursor<R>,
+        _version: &protocol_internal::ProtocolVersion,
+    ) -> std::io::Result<Self> {
         todo!()
     }
 }
@@ -211,7 +218,7 @@ pub struct PlayerListItemAddPlayer<'a> {
     pub game_mode: GameMode,
     #[protocol_field(varnum)]
     pub ping: i32,
-    pub display_name: Option<Cow<'a, str>>
+    pub display_name: Option<Cow<'a, str>>,
 }
 
 proto_enum! {
@@ -308,4 +315,3 @@ proto_enum! {
     }
     default Self::Reset
 }
-

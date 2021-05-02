@@ -1,6 +1,6 @@
 use proc_macro2::TokenStream;
 use quote::{quote, ToTokens};
-use syn::{Attribute, Error, Field, Ident, MetaList, parse_quote, spanned::Spanned};
+use syn::{parse_quote, spanned::Spanned, Attribute, Error, Field, Ident, MetaList};
 
 #[derive(Debug)]
 pub(crate) struct FieldOptions<'a> {
@@ -14,37 +14,91 @@ pub(crate) struct FieldOptions<'a> {
 impl<'a> FieldOptions<'a> {
     pub fn calculate_len(&self) -> TokenStream {
         let ident = &self.ident;
-        let path = self.protocol_type.get_path_ser(&self.ty);
-        match self.is_struct {
-            true => quote! { #path::calculate_len(&self.#ident) },
-            false => quote! { #path::calculate_len(#ident) },
+        let ty = &self.ty;
+
+        let ident = self
+            .is_struct
+            .then(|| quote! { &self.#ident })
+            .unwrap_or(quote! { #ident });
+
+        match self.protocol_type {
+            FieldType::VarNum => {
+                quote! { ::protocol_internal::VarNum::<#ty>::calculate_len(#ident) }
+            }
+            FieldType::Position => {
+                quote! { ::protocol_internal::ProtocolPositionSupport::calculate_len(#ident) }
+            }
+            FieldType::DynArray => {
+                quote! { ::protocol_internal::DynArray::calculate_len(#ident, version) }
+            }
+            _ => {
+                quote! { <#ty as ::protocol_internal::ProtocolSupportEncoder>::calculate_len(#ident, version) }
+            }
         }
     }
 
     pub fn encode(&self) -> TokenStream {
         let ident = &self.ident;
-        let path = self.protocol_type.get_path_ser(&self.ty);
-        match self.is_struct {
-            true => quote! { #path::encode(&self.#ident, &mut dst)?; },
-            false => quote! { #path::encode(#ident, &mut dst)?; },
+        let ty = &self.ty;
+
+        let ident = self
+            .is_struct
+            .then(|| quote! { &self.#ident })
+            .unwrap_or(quote! { #ident });
+
+        match self.protocol_type {
+            FieldType::VarNum => {
+                quote! { ::protocol_internal::VarNum::<#ty>::encode(#ident, dst)?; }
+            }
+            FieldType::Position => {
+                quote! { ::protocol_internal::ProtocolPositionSupport::encode(#ident, dst)?; }
+            }
+            FieldType::DynArray => {
+                quote! { ::protocol_internal::DynArray::encode(#ident, dst, version)?; }
+            }
+            _ => {
+                quote! { <#ty as ::protocol_internal::ProtocolSupportEncoder>::encode(#ident, dst, version)?; }
+            }
         }
     }
 
     pub fn decode(&self) -> TokenStream {
         let ident = &self.ident;
+        let ty = &self.ty;
 
         let method = if let Some(validator) = &self.validator {
             let path = match validator {
                 FieldValidator::Range { .. } => {
                     self.protocol_type.get_range_validator_path(&self.ty)
                 }
-                _ => self.protocol_type.get_path_de(&self.ty),
+                _ => match self.protocol_type {
+                    FieldType::VarNum => quote! { ::protocol_internal::VarNum::<#ty> },
+                    FieldType::Position => quote! { ::protocol_internal::ProtocolPositionSupport },
+                    FieldType::DynArray => quote! { ::protocol_internal::DynArray },
+                    FieldType::Fixed => quote! { ::protocol_internal::FixedVec },
+                    FieldType::Regex => quote! { ::protocol_internal::Regex },
+                    FieldType::Default => {
+                        quote! { <#ty as ::protocol_internal::ProtocolSupportDecoder> }
+                    }
+                },
             };
 
             validator.decode(&path)
         } else {
-            let path = self.protocol_type.get_path_de(&self.ty);
-            quote! { #path::decode(&mut src) }
+            match self.protocol_type {
+                FieldType::VarNum => quote! { ::protocol_internal::VarNum::<#ty>::decode(src) },
+                FieldType::Position => {
+                    quote! { ::protocol_internal::ProtocolPositionSupport::decode(src) }
+                }
+                FieldType::DynArray => {
+                    quote! { ::protocol_internal::DynArray::decode(src, version) }
+                }
+                FieldType::Fixed => quote! { ::protocol_internal::FixedVec::decode(src, version) },
+                FieldType::Regex => quote! { ::protocol_internal::Regex::decode(src, version) },
+                FieldType::Default => {
+                    quote! { <#ty as ::protocol_internal::ProtocolSupportDecoder>::decode(src, version) }
+                }
+            }
         };
 
         quote! {
@@ -64,15 +118,15 @@ impl FieldValidator {
     pub fn decode(&self, path: &TokenStream) -> proc_macro2::TokenStream {
         match self {
             FieldValidator::Fixed(len) => quote! {
-                #path::decode(&mut src, #len)
+                #path::decode(src, version, #len)
             },
             FieldValidator::Range { min, max } => quote! {
-                #path::decode(&mut src, #min, #max)
+                #path::decode(src, version, #min, #max)
             },
             FieldValidator::Regex(regex) => quote! {
                 {
                     ::lazy_static::lazy_static! { static ref REGEX: ::regex::Regex = regex::Regex::new(#regex).unwrap(); };
-                    #path::decode(&mut src, &REGEX)
+                    #path::decode(src, version, &REGEX)
                 }
             },
         }
@@ -90,30 +144,6 @@ pub enum FieldType {
 }
 
 impl FieldType {
-    pub fn get_path_ser(&self, ty: &TokenStream) -> TokenStream {
-        match self {
-            FieldType::VarNum => quote! { ::protocol_internal::VarNum::<#ty> },
-            FieldType::Position => quote! { ::protocol_internal::ProtocolPositionSupport },
-            FieldType::DynArray => quote! { ::protocol_internal::DynArray },
-            _ => {
-                quote! { <#ty as ::protocol_internal::ProtocolSupportEncoder> }
-            }
-        }
-    }
-
-    pub fn get_path_de(&self, ty: &TokenStream) -> TokenStream {
-        match self {
-            FieldType::VarNum => quote! { ::protocol_internal::VarNum::<#ty> },
-            FieldType::Position => quote! { ::protocol_internal::ProtocolPositionSupport },
-            FieldType::DynArray => quote! { ::protocol_internal::DynArray },
-            FieldType::Fixed => quote! { ::protocol_internal::FixedVec },
-            FieldType::Regex => quote! { ::protocol_internal::Regex },
-            FieldType::Default => {
-                quote! { <#ty as ::protocol_internal::ProtocolSupportDecoder> }
-            }
-        }
-    }
-
     pub fn get_range_validator_path(&self, ty: &TokenStream) -> TokenStream {
         match self {
             FieldType::VarNum => {
@@ -365,9 +395,9 @@ pub fn extract_packet_range(attrs: &Vec<Attribute>) -> (Option<i32>, Option<i32>
 
     let meta_items = match attr.parse_meta().unwrap() {
         syn::Meta::List(list) => list.nested.into_iter(),
-        _ => return (None, None)
+        _ => return (None, None),
     };
-    
+
     let mut min = None;
     let mut max = None;
 
@@ -378,15 +408,10 @@ pub fn extract_packet_range(attrs: &Vec<Attribute>) -> (Option<i32>, Option<i32>
                     syn::Lit::Int(int) => int,
                     _ => return (None, None),
                 }
-                .base10_parse().unwrap();
+                .base10_parse()
+                .unwrap();
 
-                match value
-                    .path
-                    .get_ident()
-                    .unwrap()
-                    .to_string()
-                    .as_str()
-                {
+                match value.path.get_ident().unwrap().to_string().as_str() {
                     "min" => min = Some(int),
                     "max" => max = Some(int),
                     "eq" => {
@@ -404,10 +429,7 @@ pub fn extract_packet_range(attrs: &Vec<Attribute>) -> (Option<i32>, Option<i32>
 }
 
 pub fn extract_packet_id(attrs: &Vec<Attribute>) -> syn::Result<Option<i32>> {
-    let meta = match attrs
-        .iter()
-        .find(|attr| attr.path == parse_quote!(packet))
-    {
+    let meta = match attrs.iter().find(|attr| attr.path == parse_quote!(packet)) {
         Some(attr) => attr.parse_meta()?,
         None => return Ok(None),
     };

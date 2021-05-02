@@ -51,23 +51,23 @@ pub(crate) fn expand(attr: Vec<NestedMeta>, item: ItemMod) -> crate::Result {
     });
     let variants_ser = variants.iter().map(|(ident, _)| {
         quote! {
-            Self::#ident(packet) => ::protocol_internal::ProtocolSupportEncoder::encode(packet, dst)
+            Self::#ident(packet) => ::protocol_internal::ProtocolSupportEncoder::encode(packet, dst, version)
         }
     });
 
     let variants_packet_calc_len = variants.iter().map(|(ident, _)| {
         quote! {
-            Self::#ident(packet) => ::protocol_internal::PacketEncoder::calculate_len(packet)
+            Self::#ident(packet) => ::protocol_internal::PacketEncoder::calculate_len(packet, version)
         }
     });
     let variants_packet_ser = variants.iter().map(|(ident, _)| {
         quote! {
-            Self::#ident(packet) => ::protocol_internal::PacketEncoder::encode(packet, dst)
+            Self::#ident(packet) => ::protocol_internal::PacketEncoder::encode(packet, dst, version)
         }
     });
     let variants_packet_de = variants.iter().map(|(ident, id)| {
         quote! {
-            #id => Ok(Self::#ident(::protocol_internal::ProtocolSupportDecoder::decode(src)?))
+            #id => Ok(Self::#ident(::protocol_internal::ProtocolSupportDecoder::decode(src, version)?))
         }
     });
 
@@ -86,13 +86,13 @@ pub(crate) fn expand(attr: Vec<NestedMeta>, item: ItemMod) -> crate::Result {
         }
 
         impl ::protocol_internal::ProtocolSupportEncoder for #ident {
-            fn calculate_len(&self) -> usize {
+            fn calculate_len(&self, version: &::protocol_internal::ProtocolVersion) -> usize {
                 match self {
                     #(#variants_calc_len),*
                 }
             }
 
-            fn encode<W: std::io::Write>(&self, mut dst: &mut W) -> std::io::Result<()> {
+            fn encode<W: std::io::Write>(&self, mut dst: &mut W, version: &::protocol_internal::ProtocolVersion) -> std::io::Result<()> {
                 Ok(match self {
                     #(#variants_ser?),*
                 })
@@ -100,7 +100,7 @@ pub(crate) fn expand(attr: Vec<NestedMeta>, item: ItemMod) -> crate::Result {
         }
 
         impl ::protocol_internal::ProtocolSupportDecoder for #ident {
-            fn decode<R: std::io::Read>(mut src: &mut R) -> std::io::Result<Self> {
+            fn decode<R: std::io::Read + AsRef<[u8]>>(_: &mut std::io::Cursor<R>, _: &::protocol_internal::ProtocolVersion) -> std::io::Result<Self> {
                 unimplemented!();
             }
         }
@@ -112,16 +112,15 @@ pub(crate) fn expand(attr: Vec<NestedMeta>, item: ItemMod) -> crate::Result {
                 }
             }
 
-            fn encode<W: std::io::Write>(&self, mut dst: &mut W) -> std::io::Result<()> {
+            fn encode<W: std::io::Write>(&self, mut dst: &mut W, version: &::protocol_internal::ProtocolVersion) -> std::io::Result<()> {
                 match self {
                     #(#variants_packet_ser),*
                 }
             }
         }
 
-
         impl ::protocol_internal::PacketDecoder for #ident {
-            fn decode<R: std::io::Read>(mut src: &mut R) -> std::io::Result<Self> {
+            fn decode<R: std::io::Read + AsRef<[u8]>>(src: &mut std::io::Cursor<R>, version: &::protocol_internal::ProtocolVersion) -> std::io::Result<Self> {
                 match ::protocol_internal::VarNum::<i32>::decode(src)? {
                     #(#variants_packet_de),*,
                     id => Err(std::io::Error::new(std::io::ErrorKind::NotFound, format!("invalid packet id {}", id)))

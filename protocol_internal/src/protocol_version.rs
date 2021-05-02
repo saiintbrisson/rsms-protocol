@@ -4,7 +4,9 @@ use std::fmt::Debug;
 pub struct ProtocolVersion(i32);
 
 impl ProtocolVersion {
-    
+    pub fn new(version: i32) -> Self {
+        Self(version)
+    }
 }
 
 impl std::ops::Deref for ProtocolVersion {
@@ -15,9 +17,15 @@ impl std::ops::Deref for ProtocolVersion {
     }
 }
 
+impl From<ProtocolVersionEnum> for ProtocolVersion {
+    fn from(version: ProtocolVersionEnum) -> Self {
+        Self(version.to_version())
+    }
+}
+
 impl Debug for ProtocolVersion {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
-        write!(f, "")
+        write!(f, "{:?} ({:?})", self.0, ProtocolVersionEnum::find(self.0))
     }
 }
 

@@ -1,6 +1,6 @@
 use proc_macro2::TokenStream;
 use quote::quote;
-use syn::{Attribute, Expr, Ident, Variant, parse_quote};
+use syn::{parse_quote, Attribute, Expr, Ident, Variant};
 
 use super::{field::FieldOptions, Item};
 
@@ -11,10 +11,12 @@ pub(crate) fn expand_enum(
 ) -> syn::Result<Item> {
     let ty = match extract_repr(attrs) {
         Some(ty) => ty,
-        None => return Err(syn::Error::new(
-            ident.span(),
-            format!("ProtocolSupport expected named fields or units"),
-        )),
+        None => {
+            return Err(syn::Error::new(
+                ident.span(),
+                format!("ProtocolSupport expected named fields or units"),
+            ))
+        }
     };
     let is_varnum = extract_varnum(attrs);
 
@@ -32,7 +34,9 @@ pub(crate) fn expand_enum(
         };
 
         let fields: Vec<FieldOptions> = match &variant.fields {
-            syn::Fields::Named(named) => named.named.iter()
+            syn::Fields::Named(named) => named
+                .named
+                .iter()
                 .map(super::field::parse_field)
                 .map(Result::unwrap)
                 .collect(),
@@ -42,18 +46,30 @@ pub(crate) fn expand_enum(
                     ident.span(),
                     format!("ProtocolSupport expected named fields or units"),
                 ));
-            },
+            }
         };
 
-        calc_len.push(expand_variant_calculate_len(is_varnum, &ty, &expr, &variant.ident, &fields));
-        encode.push(expand_variant_encode(is_varnum, &ty, &expr, &variant.ident, &fields));
+        calc_len.push(expand_variant_calculate_len(
+            is_varnum,
+            &ty,
+            &expr,
+            &variant.ident,
+            &fields,
+        ));
+        encode.push(expand_variant_encode(
+            is_varnum,
+            &ty,
+            &expr,
+            &variant.ident,
+            &fields,
+        ));
         decode.push(expand_variant_decode(&expr, &variant.ident, &fields));
     }
 
     let ty_path = if is_varnum {
-        quote! { ::protocol_internal::VarNum::<#ty> }
+        quote! { ::protocol_internal::VarNum::<#ty>::decode(src) }
     } else {
-        quote! { <#ty as ::protocol_internal::ProtocolSupportDecoder> }
+        quote! { <#ty as ::protocol_internal::ProtocolSupportDecoder>::decode(src, version) }
     };
 
     Ok(Item {
@@ -61,16 +77,17 @@ pub(crate) fn expand_enum(
             quote! { match self { #(#calc_len)* } },
             quote! { match self { #(#encode)* } Ok(()) },
             quote! {
-                Ok(match #ty_path::decode(src)? {
+                Ok(match #ty_path? {
                     #(#decode)*
                     discriminant => {
                         return Err(std::io::Error::new(
-                            std::io::ErrorKind::InvalidInput, 
+                            std::io::ErrorKind::InvalidInput,
                             format!("did not expect {}", discriminant)
                         ));
                     }
                 })
-            }),
+            },
+        ),
         packet_id,
         min_size,
         max_size,
@@ -78,7 +95,9 @@ pub(crate) fn expand_enum(
 }
 
 fn extract_variant_discriminant(variant: &Variant) -> syn::Result<Expr> {
-    let attr = variant.attrs.iter()
+    let attr = variant
+        .attrs
+        .iter()
         .find(|attr| attr.path == parse_quote!(protocol_field))
         .ok_or(syn::Error::new(
             variant.ident.span(),
@@ -86,23 +105,25 @@ fn extract_variant_discriminant(variant: &Variant) -> syn::Result<Expr> {
         ))?;
 
     let meta = match attr.parse_meta()? {
-        syn::Meta::List(list) => {
-            list.nested.into_iter().next().ok_or(syn::Error::new(
+        syn::Meta::List(list) => list.nested.into_iter().next().ok_or(syn::Error::new(
+            variant.ident.span(),
+            format!("ProtocolSupport expected enum discriminant"),
+        ))?,
+        _ => {
+            return Err(syn::Error::new(
                 variant.ident.span(),
                 format!("ProtocolSupport expected enum discriminant"),
             ))?
-        },
-        _ => return Err(syn::Error::new(
-            variant.ident.span(),
-            format!("ProtocolSupport expected enum discriminant"),
-        ))?,
+        }
     };
     let meta = match meta {
         syn::NestedMeta::Meta(syn::Meta::NameValue(meta)) => meta,
-        _ => return Err(syn::Error::new(
-            variant.ident.span(),
-            format!("ProtocolSupport expected enum discriminant"),
-        ))?,
+        _ => {
+            return Err(syn::Error::new(
+                variant.ident.span(),
+                format!("ProtocolSupport expected enum discriminant"),
+            ))?
+        }
     };
 
     let path = meta.path.get_ident().ok_or(syn::Error::new(
@@ -116,13 +137,24 @@ fn extract_variant_discriminant(variant: &Variant) -> syn::Result<Expr> {
         ))?;
     }
 
-    Ok(Expr::Lit(syn::ExprLit { lit: meta.lit, attrs: Vec::new() }))
+    Ok(Expr::Lit(syn::ExprLit {
+        lit: meta.lit,
+        attrs: Vec::new(),
+    }))
 }
 
-fn expand_variant_calculate_len(is_varnum: bool, ty: &Ident, i: &Expr, ident: &Ident, fields: &Vec<FieldOptions>) -> TokenStream {
+fn expand_variant_calculate_len(
+    is_varnum: bool,
+    ty: &Ident,
+    i: &Expr,
+    ident: &Ident,
+    fields: &Vec<FieldOptions>,
+) -> TokenStream {
     let id_cl = match is_varnum {
         true => quote! { ::protocol_internal::VarNum::<#ty>::calculate_len(&(#i)) },
-        false => quote! { <#ty as ::protocol_internal::ProtocolSupportEncoder>::calculate_len(&(#i)) },
+        false => {
+            quote! { <#ty as ::protocol_internal::ProtocolSupportEncoder>::calculate_len(&(#i), version) }
+        }
     };
 
     let calculate_len = fields.iter().map(FieldOptions::calculate_len);
@@ -135,10 +167,18 @@ fn expand_variant_calculate_len(is_varnum: bool, ty: &Ident, i: &Expr, ident: &I
     }
 }
 
-fn expand_variant_encode(is_varnum: bool, ty: &Ident, i: &Expr, ident: &Ident, fields: &Vec<FieldOptions>) -> TokenStream {
+fn expand_variant_encode(
+    is_varnum: bool,
+    ty: &Ident,
+    i: &Expr,
+    ident: &Ident,
+    fields: &Vec<FieldOptions>,
+) -> TokenStream {
     let id_encode = match is_varnum {
         true => quote! { ::protocol_internal::VarNum::<#ty>::encode(&(#i), dst)?; },
-        false => quote! { <#ty as ::protocol_internal::ProtocolSupportEncoder>::encode(&(#i), dst)?; },
+        false => {
+            quote! { <#ty as ::protocol_internal::ProtocolSupportEncoder>::encode(&(#i), dst, version)?; }
+        }
     };
 
     let encode = fields.iter().map(FieldOptions::encode);
@@ -163,17 +203,24 @@ fn expand_variant_decode(i: &Expr, ident: &Ident, fields: &Vec<FieldOptions>) ->
 }
 
 fn extract_repr(attrs: &Vec<Attribute>) -> Option<syn::Ident> {
-    attrs.iter()
+    attrs
+        .iter()
         .find(|attr| attr.path == parse_quote!(repr))
         .map(|attr| attr.parse_args::<Ident>().ok())
         .flatten()
 }
 
 fn extract_varnum(attrs: &Vec<Attribute>) -> bool {
-    match attrs.iter()
+    match attrs
+        .iter()
         .find(|attr| attr.path == parse_quote!(protocol_field))
-        .map(|attr| attr.parse_args::<Ident>().map(|ident| ident.to_string()).ok())
-        .flatten() {
+        .map(|attr| {
+            attr.parse_args::<Ident>()
+                .map(|ident| ident.to_string())
+                .ok()
+        })
+        .flatten()
+    {
         Some(s) => &s == "varnum",
         None => false,
     }

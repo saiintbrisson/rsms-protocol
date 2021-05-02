@@ -4,7 +4,12 @@ pub trait RangeValidatedSupport<T = Self>
 where
     T: ProtocolSupportDecoder + Sized,
 {
-    fn decode<R: std::io::Read>(src: &mut R, min: usize, max: usize) -> std::io::Result<T>;
+    fn decode<R: std::io::Read + AsRef<[u8]>>(
+        src: &mut std::io::Cursor<R>,
+        version: &crate::ProtocolVersion,
+        min: usize,
+        max: usize,
+    ) -> std::io::Result<T>;
 }
 
 #[macro_export]
@@ -12,8 +17,9 @@ macro_rules! impl_range_validated_numeral {
     ($n:ty, VarNum) => {
         impl $crate::RangeValidatedSupport<$n> for $crate::VarNum<$n> {
             #[inline(always)]
-            fn decode<R: std::io::Read>(
-                src: &mut R,
+            fn decode<R: std::io::Read + AsRef<[u8]>>(
+                src: &mut std::io::Cursor<R>,
+                _: &crate::ProtocolVersion,
                 min: usize,
                 max: usize,
             ) -> std::io::Result<$n> {
@@ -40,12 +46,13 @@ macro_rules! impl_range_validated_numeral {
     ($n:ty) => {
         impl $crate::RangeValidatedSupport for $n {
             #[inline(always)]
-            fn decode<R: std::io::Read>(
-                src: &mut R,
+            fn decode<R: std::io::Read + AsRef<[u8]>>(
+                src: &mut std::io::Cursor<R>,
+                version: &crate::ProtocolVersion,
                 min: usize,
                 max: usize,
             ) -> std::io::Result<Self> {
-                let value = <$n as $crate::ProtocolSupportDecoder>::decode(src)?;
+                let value = <$n as $crate::ProtocolSupportDecoder>::decode(src, version)?;
 
                 if min != 0 && min as $n > value {
                     return Err(std::io::Error::new(

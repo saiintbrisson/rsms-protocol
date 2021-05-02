@@ -4,20 +4,24 @@ pub struct DynArray;
 
 impl DynArray {
     #[inline(always)]
-    pub fn calculate_len<T: ProtocolSupportEncoder>(value: &Vec<T>) -> usize {
+    pub fn calculate_len<T: ProtocolSupportEncoder>(
+        value: &Vec<T>,
+        version: &crate::ProtocolVersion,
+    ) -> usize {
         value
             .iter()
-            .map(<T as ProtocolSupportEncoder>::calculate_len)
+            .map(|e| <T as ProtocolSupportEncoder>::calculate_len(e, version))
             .fold(0, |acc, x| acc + x)
     }
 
-    pub fn decode<R: std::io::Read, T: ProtocolSupportDecoder>(
-        src: &mut R,
+    pub fn decode<R: std::io::Read + AsRef<[u8]>, T: ProtocolSupportDecoder>(
+        src: &mut std::io::Cursor<R>,
+        version: &crate::ProtocolVersion,
     ) -> std::io::Result<Vec<T>> {
         let mut buf = Vec::new();
 
         loop {
-            match <T as ProtocolSupportDecoder>::decode(src) {
+            match <T as ProtocolSupportDecoder>::decode(src, version) {
                 Ok(out) => buf.push(out),
                 Err(err) => match err.kind() {
                     std::io::ErrorKind::UnexpectedEof => break,
@@ -32,9 +36,10 @@ impl DynArray {
     pub fn encode<W: std::io::Write, T: ProtocolSupportEncoder>(
         value: &Vec<T>,
         dst: &mut W,
+        version: &crate::ProtocolVersion,
     ) -> std::io::Result<()> {
         for e in value {
-            <T as ProtocolSupportEncoder>::encode(e, dst)?;
+            <T as ProtocolSupportEncoder>::encode(e, dst, version)?;
         }
 
         Ok(())
@@ -42,8 +47,9 @@ impl DynArray {
 }
 
 impl<T: ProtocolSupportDecoder> RangeValidatedSupport<Vec<T>> for DynArray {
-    fn decode<R: std::io::Read>(
-        src: &mut R,
+    fn decode<R: std::io::Read + AsRef<[u8]>>(
+        src: &mut std::io::Cursor<R>,
+        version: &crate::ProtocolVersion,
         min: usize,
         max: usize,
     ) -> std::io::Result<Vec<T>> {
@@ -57,7 +63,7 @@ impl<T: ProtocolSupportDecoder> RangeValidatedSupport<Vec<T>> for DynArray {
                 ));
             }
 
-            match <T as ProtocolSupportDecoder>::decode(src) {
+            match <T as ProtocolSupportDecoder>::decode(src, version) {
                 Ok(out) => buf.push(out),
                 Err(err) => match err.kind() {
                     std::io::ErrorKind::UnexpectedEof => break,

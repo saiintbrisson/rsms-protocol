@@ -16,7 +16,7 @@ pub(crate) fn expand_struct(
             protocol_support: (quote! { 0 }, quote! { Ok(()) }, quote! { Ok(Self) }),
             packet_id,
             min_size,
-            max_size
+            max_size,
         }),
         _ => {
             return Err(syn::Error::new(
@@ -28,10 +28,10 @@ pub(crate) fn expand_struct(
 }
 
 fn parse_fields(
-    FieldsNamed { named, .. }: &FieldsNamed, 
-    packet_id: Option<i32>, 
-    min_size: Option<i32>, 
-    max_size: Option<i32>
+    FieldsNamed { named, .. }: &FieldsNamed,
+    packet_id: Option<i32>,
+    min_size: Option<i32>,
+    max_size: Option<i32>,
 ) -> crate::Result<Item> {
     let mut fields = vec![];
     for field in named {
@@ -61,6 +61,6 @@ fn parse_fields(
         protocol_support: (calc_len, ser, de),
         packet_id,
         min_size,
-        max_size
+        max_size,
     })
 }

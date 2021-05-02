@@ -25,8 +25,8 @@ pub(crate) fn expand(
     let mut output = TokenStream::new();
     let (impl_generics, ty_generics, where_clause) = generics.split_for_impl();
 
-    let Item { 
-        protocol_support: (calc_len, ser, de), 
+    let Item {
+        protocol_support: (calc_len, ser, de),
         packet_id,
         min_size,
         max_size,
@@ -42,40 +42,46 @@ pub(crate) fn expand(
     }?;
 
     if let Some(id) = packet_id {
-        let min_size = min_size.map(|size| quote! {
-            fn min_size() -> i32 {
-                #size
+        let min_size = min_size.map(|size| {
+            quote! {
+                fn min_size(_: &protocol_internal::ProtocolVersion) -> i32 {
+                    #size
+                }
             }
         });
 
-        let max_size = max_size.map(|size| quote! {
-            fn max_size() -> i32 {
-                #size
+        let max_size = max_size.map(|size| {
+            quote! {
+                fn max_size(_: &protocol_internal::ProtocolVersion) -> i32 {
+                    #size
+                }
             }
         });
 
         output.append_all(quote! {
             impl #impl_generics ::protocol_internal::PacketEncoder for #ident #ty_generics #where_clause {
-                fn calculate_len(&self) -> usize {
-                    ::protocol_internal::VarNum::<i32>::calculate_len(&#id) + ::protocol_internal::ProtocolSupportEncoder::calculate_len(self)
+                fn calculate_len(&self, version: &::protocol_internal::ProtocolVersion) -> usize {
+                    ::protocol_internal::VarNum::<i32>::calculate_len(&#id) + ::protocol_internal::ProtocolSupportEncoder::calculate_len(self, version)
                 }
 
-                fn encode<W: std::io::Write>(&self, mut dst: &mut W) -> std::io::Result<()> {
+                fn encode<W: std::io::Write>(&self, mut dst: &mut W, version: &::protocol_internal::ProtocolVersion) -> std::io::Result<()> {
                     ::protocol_internal::VarNum::<i32>::encode(&#id, dst)?;
-                    ::protocol_internal::ProtocolSupportEncoder::encode(self, dst)
+                    ::protocol_internal::ProtocolSupportEncoder::encode(self, dst, version)
                 }
             }
 
             impl #impl_generics ::protocol_internal::PacketDecoder for #ident #ty_generics #where_clause {
-                fn decode<R: std::io::Read>(mut src: &mut R) -> std::io::Result<Self> {
+                fn decode<R: std::io::Read + AsRef<[u8]>>(src: &mut std::io::Cursor<R>, version: &::protocol_internal::ProtocolVersion) -> std::io::Result<Self> {
                     let id = ::protocol_internal::VarNum::<i32>::decode(src)?;
                     if id != #id {
                         return Err(std::io::Error::new(std::io::ErrorKind::InvalidInput, format!("expected id {}, got {}", #id, id)));
                     }
-    
-                    ::protocol_internal::ProtocolSupportDecoder::decode(src)
-                }
 
+                    ::protocol_internal::ProtocolSupportDecoder::decode(src, version)
+                }
+            }
+
+            impl #impl_generics ::protocol_internal::PacketSizer for #ident #ty_generics #where_clause {
                 #min_size
                 #max_size
             }
@@ -84,17 +90,17 @@ pub(crate) fn expand(
 
     output.append_all(quote! {
         impl #impl_generics ::protocol_internal::ProtocolSupportEncoder for #ident #ty_generics #where_clause {
-            fn calculate_len(&self) -> usize {
+            fn calculate_len(&self, version: &::protocol_internal::ProtocolVersion) -> usize {
                 #calc_len
             }
 
-            fn encode<W: std::io::Write>(&self, mut dst: &mut W) -> std::io::Result<()> {
+            fn encode<W: std::io::Write>(&self, mut dst: &mut W, version: &::protocol_internal::ProtocolVersion) -> std::io::Result<()> {
                 #ser
             }
         }
 
         impl #impl_generics ::protocol_internal::ProtocolSupportDecoder for #ident #ty_generics #where_clause {
-            fn decode<R: std::io::Read>(mut src: &mut R) -> std::io::Result<Self> {
+            fn decode<R: std::io::Read + AsRef<[u8]>>(src: &mut std::io::Cursor<R>, version: &::protocol_internal::ProtocolVersion) -> std::io::Result<Self> {
                 #de
             }
         }

@@ -43,11 +43,11 @@ impl VarNum<i32> {
         Ok(())
     }
 
-    pub fn decode<R: std::io::Read>(src: &mut R) -> io::Result<i32> {
+    pub fn decode<R: std::io::Read>(src: &mut std::io::Cursor<R>) -> io::Result<i32> {
         let mut result = 0i32;
 
         for i in &VarNum::<i32>::NUM_SHIFT[..5] {
-            let byte = src.read_u8()?;
+            let byte = src.get_mut().read_u8()?;
             result |= ((byte as i32 & 0x7F) << i) as i32;
 
             if byte & 0x80 == 0 {
@@ -79,7 +79,9 @@ impl VarNum<i64> {
         Ok(())
     }
 
-    pub fn decode<R: std::io::Read>(_src: &mut R) -> io::Result<i64> {
+    pub fn decode<R: std::io::Read + AsRef<[u8]>>(
+        _src: &mut std::io::Cursor<R>,
+    ) -> io::Result<i64> {
         Ok(0)
     }
 }
@@ -102,7 +104,9 @@ impl VarNum<Vec<i32>> {
         Ok(())
     }
 
-    pub fn decode<R: std::io::Read>(src: &mut R) -> io::Result<Vec<i32>> {
+    pub fn decode<R: std::io::Read + AsRef<[u8]>>(
+        src: &mut std::io::Cursor<R>,
+    ) -> io::Result<Vec<i32>> {
         let len = VarNum::<i32>::decode(src)? as usize;
 
         let mut buf = Vec::with_capacity(len);

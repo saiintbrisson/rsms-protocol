@@ -1,4 +1,10 @@
+use std::io;
+
 use misc::misc::chat::ChatComponent;
+use protocol_internal::{ProtocolSupportDecoder, ProtocolSupportEncoder, ProtocolVersionEnum};
+use uuid::Uuid;
+
+use crate::packet;
 
 #[derive(Debug, protocol_derive::ProtocolSupport)]
 #[packet(0x00)]
@@ -31,13 +37,9 @@ pub struct EncryptionResponse {
     pub verify_token: Vec<u8>,
 }
 
-#[derive(Debug, protocol_derive::ProtocolSupport)]
-#[packet(0x02)]
-#[packet_size(max = 54)]
+#[derive(Debug)]
 pub struct LoginSuccess {
-    #[protocol_field(range(eq = 36))]
-    pub uuid: String,
-    #[protocol_field(range(min = 1, max = 16))]
+    pub uuid: Uuid,
     pub username: String,
 }
 
@@ -49,17 +51,62 @@ pub struct SetCompression {
     pub threshold: i32,
 }
 
+packet!(0x02 => LoginSuccess);
+
+impl ProtocolSupportEncoder for LoginSuccess {
+    fn calculate_len(&self, version: &protocol_internal::ProtocolVersion) -> usize {
+        self.username.calculate_len(version) + match version >= &ProtocolVersionEnum::V1_16 {
+            true => 16,
+            false => 37,
+        }
+    }
+
+    fn encode<W: io::Write>(
+        &self,
+        dst: &mut W,
+        version: &protocol_internal::ProtocolVersion,
+    ) -> io::Result<()> {
+        match version >= &ProtocolVersionEnum::V1_16 {
+            true => self.uuid.encode(dst, version),
+            false => self.uuid.to_string().encode(dst, version),
+        }?;
+
+        self.username.encode(dst, version)
+    }
+}
+
+impl ProtocolSupportDecoder for LoginSuccess {
+    fn decode<R: io::Read + AsRef<[u8]>>(
+        src: &mut io::Cursor<R>,
+        version: &protocol_internal::ProtocolVersion,
+    ) -> io::Result<Self> {
+        let uuid = match version >= &ProtocolVersionEnum::V1_16 {
+            true => Uuid::decode(src, version),
+            false => Uuid::parse_str(&String::decode(src, version)?)
+                .map_err(|err| io::Error::new(io::ErrorKind::InvalidData, err)),
+        }?;
+
+        Ok(Self {
+            uuid,
+            username: String::decode(src, version)?
+        })
+    }
+}
+
 #[cfg(test)]
 mod test {
-    use protocol_internal::ProtocolSupportEncoder;
+    use protocol_internal::{ProtocolSupportEncoder, ProtocolVersionEnum};
 
     #[test]
     fn test_login_success_len() {
         let login_success = super::LoginSuccess {
-            uuid: "".into(),
+            uuid: uuid::Uuid::nil(),
             username: "SaiintBrisson".into(),
         };
 
-        assert_eq!(login_success.calculate_len(), 15)
+        assert_eq!(
+            login_success.calculate_len(&ProtocolVersionEnum::V1_8.into()),
+            15
+        )
     }
 }

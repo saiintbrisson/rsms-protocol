@@ -129,22 +129,33 @@ impl<'a> ChatComponent<'a> {
 }
 
 impl<'a> ProtocolSupportEncoder for ChatComponent<'a> {
-    fn calculate_len(&self) -> usize {
-        <String as ProtocolSupportEncoder>::calculate_len(&serde_json::to_string(self).unwrap())
+    fn calculate_len(&self, version: &::protocol_internal::ProtocolVersion) -> usize {
+        <String as ProtocolSupportEncoder>::calculate_len(
+            &serde_json::to_string(self).unwrap(),
+            version,
+        )
     }
 
-    fn encode<W: std::io::Write>(&self, dst: &mut W) -> std::io::Result<()> {
+    fn encode<W: std::io::Write>(
+        &self,
+        dst: &mut W,
+        version: &protocol_internal::ProtocolVersion,
+    ) -> std::io::Result<()> {
         <String as ProtocolSupportEncoder>::encode(
             &serde_json::to_string(self)
                 .map_err(|err| std::io::Error::new(std::io::ErrorKind::InvalidData, err))?,
             dst,
+            version,
         )
     }
 }
 
 impl<'a> ProtocolSupportDecoder for ChatComponent<'a> {
-    fn decode<R: std::io::Read>(src: &mut R) -> std::io::Result<Self> {
-        serde_json::from_str(&<String as ProtocolSupportDecoder>::decode(src)?)
+    fn decode<R: std::io::Read + AsRef<[u8]>>(
+        src: &mut std::io::Cursor<R>,
+        version: &protocol_internal::ProtocolVersion,
+    ) -> std::io::Result<Self> {
+        serde_json::from_str(&<String as ProtocolSupportDecoder>::decode(src, version)?)
             .map_err(|err| std::io::Error::new(std::io::ErrorKind::InvalidData, err))
     }
 }
@@ -223,18 +234,27 @@ impl From<char> for ChatColor {
 }
 
 impl protocol_internal::ProtocolSupportEncoder for ChatColor {
-    fn calculate_len(&self) -> usize {
+    fn calculate_len(&self, _: &::protocol_internal::ProtocolVersion) -> usize {
         1
     }
 
-    fn encode<W: std::io::Write>(&self, dst: &mut W) -> std::io::Result<()> {
-        protocol_internal::ProtocolSupportEncoder::encode(&(*self as u8), dst)
+    fn encode<W: std::io::Write>(
+        &self,
+        dst: &mut W,
+        version: &protocol_internal::ProtocolVersion,
+    ) -> std::io::Result<()> {
+        protocol_internal::ProtocolSupportEncoder::encode(&(*self as u8), dst, version)
     }
 }
 
 impl protocol_internal::ProtocolSupportDecoder for ChatColor {
-    fn decode<R: std::io::Read>(src: &mut R) -> std::io::Result<Self> {
-        Ok(Self::from(<u8 as protocol_internal::ProtocolSupportDecoder>::decode(src)? as char))
+    fn decode<R: std::io::Read + AsRef<[u8]>>(
+        src: &mut std::io::Cursor<R>,
+        version: &protocol_internal::ProtocolVersion,
+    ) -> std::io::Result<Self> {
+        Ok(Self::from(
+            <u8 as protocol_internal::ProtocolSupportDecoder>::decode(src, version)? as char,
+        ))
     }
 }
 
