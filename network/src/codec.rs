@@ -1,7 +1,7 @@
 use std::io::{Cursor, Result};
 
-use aes::{cipher::StreamCipher, Aes128};
-use cfb8::Cfb8;
+use aes::Aes128;
+use cfb8::{Cfb8, cipher::{NewStreamCipher, StreamCipher}};
 use flate2::{read::ZlibDecoder, write::ZlibEncoder};
 use protocol_internal::{PacketEncoder, ProtocolVersion, VarNum};
 
@@ -22,6 +22,10 @@ impl Codec {
         })
     }
 
+    fn enable_encryption(&mut self, secret: [u8; 16]) {
+        self.cipher = Some(AesCfb8::new_var(&secret, &secret).unwrap())
+    }
+
     fn encode(&mut self, packet: &impl PacketEncoder) -> Result<()> {
         let size = PacketEncoder::calculate_len(packet, &self.version);
         let mut dst = Vec::<u8>::with_capacity(size + 5);
@@ -29,25 +33,22 @@ impl Codec {
         match self.compression.as_mut() {
             Some(compression) if size >= compression.threshold as usize => {
                 VarNum::<i32>::encode(&(size as i32), &mut dst)?;
-
-                PacketEncoder::encode(packet, &mut dst, &self.version)
+                let _ = compression.encoder.reset(dst)?;
+                PacketEncoder::encode(packet, &mut compression.encoder, &self.version)?;
+                dst = compression.encoder.reset(Vec::new())?;
             }
             Some(_) => {
                 dst.push(0);
-                PacketEncoder::encode(packet, &mut dst, &self.version)
+                PacketEncoder::encode(packet, &mut dst, &self.version)?;
             }
-            None => PacketEncoder::encode(packet, &mut dst, &self.version),
-        }?;
+            None => {
+                PacketEncoder::encode(packet, &mut dst, &self.version)?;
+            },
+        };
 
         if let Some(cipher) = self.cipher.as_mut() {
             cipher.encrypt(&mut dst);
         }
-
-        // if let Some(compression) = self.compression.as_mut() {
-        //     if compression.encoder.get_ref().len() != 0 {
-        //         return compression.encoder.reset(Vec::new());
-        //     }
-        // }
 
         Ok(())
     }
