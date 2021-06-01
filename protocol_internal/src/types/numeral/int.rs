@@ -19,8 +19,8 @@ macro_rules! impl_numeral {
         }
 
         impl $crate::ProtocolSupportDecoder for $n {
-            fn decode<R: std::io::Read + AsRef<[u8]>>(
-                src: &mut std::io::Cursor<R>,
+            fn decode<R: std::io::Read>(
+                src: &mut R,
                 _: &$crate::ProtocolVersion,
             ) -> std::io::Result<$n> {
                 src.$r()
@@ -43,8 +43,8 @@ macro_rules! impl_numeral {
         }
 
         impl $crate::ProtocolSupportDecoder for $n {
-            fn decode<R: std::io::Read + AsRef<[u8]>>(
-                src: &mut std::io::Cursor<R>,
+            fn decode<R: std::io::Read>(
+                src: &mut R,
                 _: &$crate::ProtocolVersion,
             ) -> std::io::Result<$n> {
                 src.$r::<BigEndian>()

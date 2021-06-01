@@ -13,7 +13,7 @@ macro_rules! packet {
         }
 
         impl $(<$($l),+>)? $crate::PacketDecoder for $n $(<$($l),+>)? {
-            fn decode<R: std::io::Read + AsRef<[u8]>>(src: &mut std::io::Cursor<R>, version: &protocol_internal::ProtocolVersion) -> std::io::Result<Self> {
+            fn decode<R: std::io::Read>(src: &mut R, version: &protocol_internal::ProtocolVersion) -> std::io::Result<Self> {
                 let id = $crate::VarNum::<i32>::decode(src)? as usize;
                 if id != $id {
                     return Err(std::io::Error::new(std::io::ErrorKind::InvalidInput, format!("expected id {}, got {}", $id, id)));
@@ -22,6 +22,8 @@ macro_rules! packet {
                 $crate::ProtocolSupportDecoder::decode(src, version)
             }
         }
+
+        impl $(<$($l),+>)? $crate::PacketSizer for $n $(<$($l),+>)? {}
     };
     ($id:expr => $n:ident $(<$($l:lifetime),+>)? { $( $(#[$m:meta])? $f:ident: $t:ty),* }) => {
         #[derive(Clone, Debug, Default, protocol_derive::ProtocolSupport)]
@@ -76,7 +78,7 @@ macro_rules! packet_enum {
         }
 
         impl $(<$($l),+>)? $crate::ProtocolSupportDecoder for $en $(<$($l),+>)? {
-            fn decode<R: std::io::Read + AsRef<[u8]>>(_: &mut std::io::Cursor<R>, _: &::protocol_internal::ProtocolVersion) -> std::io::Result<Self> {
+            fn decode<R: std::io::Read>(_: &mut R, _: &::protocol_internal::ProtocolVersion) -> std::io::Result<Self> {
                 unimplemented!();
             }
         }
@@ -96,13 +98,15 @@ macro_rules! packet_enum {
         }
 
         impl $(<$($l),+>)? $crate::PacketDecoder for $en $(<$($l),+>)? {
-            fn decode<R: std::io::Read + AsRef<[u8]>>(src: &mut std::io::Cursor<R>, version: &::protocol_internal::ProtocolVersion) -> std::io::Result<Self> {
+            fn decode<R: std::io::Read>(src: &mut R, version: &::protocol_internal::ProtocolVersion) -> std::io::Result<Self> {
                 match $crate::VarNum::<i32>::decode(src)? {
                     $($id => Ok(Self::$pn($crate::ProtocolSupportDecoder::decode(src, version)?))),*,
                     id => Err(std::io::Error::new(std::io::ErrorKind::NotFound, format!("invalid packet id {}", id)))
                 }
             }
         }
+
+        impl $(<$($l),+>)? $crate::PacketSizer for $en $(<$($l),+>)? {}
     };
 }
 

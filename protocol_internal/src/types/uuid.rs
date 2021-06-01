@@ -17,8 +17,8 @@ impl ProtocolSupportEncoder for Uuid {
 }
 
 impl ProtocolSupportDecoder for Uuid {
-    fn decode<R: std::io::Read + AsRef<[u8]>>(
-        src: &mut std::io::Cursor<R>,
+    fn decode<R: std::io::Read>(
+        src: &mut R,
         version: &crate::ProtocolVersion,
     ) -> std::io::Result<Self> {
         Ok(Uuid::from_u128(ProtocolSupportDecoder::decode(

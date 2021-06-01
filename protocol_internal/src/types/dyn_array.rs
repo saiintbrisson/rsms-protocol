@@ -14,8 +14,8 @@ impl DynArray {
             .fold(0, |acc, x| acc + x)
     }
 
-    pub fn decode<R: std::io::Read + AsRef<[u8]>, T: ProtocolSupportDecoder>(
-        src: &mut std::io::Cursor<R>,
+    pub fn decode<R: std::io::Read, T: ProtocolSupportDecoder>(
+        src: &mut R,
         version: &crate::ProtocolVersion,
     ) -> std::io::Result<Vec<T>> {
         let mut buf = Vec::new();
@@ -47,8 +47,8 @@ impl DynArray {
 }
 
 impl<T: ProtocolSupportDecoder> RangeValidatedSupport<Vec<T>> for DynArray {
-    fn decode<R: std::io::Read + AsRef<[u8]>>(
-        src: &mut std::io::Cursor<R>,
+    fn decode<R: std::io::Read>(
+        src: &mut R,
         version: &crate::ProtocolVersion,
         min: usize,
         max: usize,

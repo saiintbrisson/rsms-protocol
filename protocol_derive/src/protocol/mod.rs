@@ -71,7 +71,7 @@ pub(crate) fn expand(
             }
 
             impl #impl_generics ::protocol_internal::PacketDecoder for #ident #ty_generics #where_clause {
-                fn decode<R: std::io::Read + AsRef<[u8]>>(src: &mut std::io::Cursor<R>, version: &::protocol_internal::ProtocolVersion) -> std::io::Result<Self> {
+                fn decode<R: std::io::Read>(src: &mut R, version: &::protocol_internal::ProtocolVersion) -> std::io::Result<Self> {
                     let id = ::protocol_internal::VarNum::<i32>::decode(src)?;
                     if id != #id {
                         return Err(std::io::Error::new(std::io::ErrorKind::InvalidInput, format!("expected id {}, got {}", #id, id)));
@@ -100,7 +100,7 @@ pub(crate) fn expand(
         }
 
         impl #impl_generics ::protocol_internal::ProtocolSupportDecoder for #ident #ty_generics #where_clause {
-            fn decode<R: std::io::Read + AsRef<[u8]>>(src: &mut std::io::Cursor<R>, version: &::protocol_internal::ProtocolVersion) -> std::io::Result<Self> {
+            fn decode<R: std::io::Read>(src: &mut R, version: &::protocol_internal::ProtocolVersion) -> std::io::Result<Self> {
                 #de
             }
         }

@@ -203,8 +203,8 @@ impl<'a> ProtocolSupportEncoder for PlayerListItem<'a> {
 }
 
 impl<'a> ProtocolSupportDecoder for PlayerListItem<'a> {
-    fn decode<R: std::io::Read + AsRef<[u8]>>(
-        _src: &mut std::io::Cursor<R>,
+    fn decode<R: std::io::Read>(
+        _src: &mut R,
         _version: &protocol_internal::ProtocolVersion,
     ) -> std::io::Result<Self> {
         todo!()

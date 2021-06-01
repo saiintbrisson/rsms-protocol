@@ -29,8 +29,8 @@ impl<T> ProtocolSupportDecoder for Option<T>
 where
     T: ProtocolSupportDecoder,
 {
-    fn decode<R: std::io::Read + AsRef<[u8]>>(
-        src: &mut std::io::Cursor<R>,
+    fn decode<R: std::io::Read>(
+        src: &mut R,
         version: &crate::ProtocolVersion,
     ) -> std::io::Result<Self> {
         if <bool as ProtocolSupportDecoder>::decode(src, version)? {

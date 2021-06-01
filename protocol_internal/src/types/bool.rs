@@ -19,8 +19,8 @@ impl ProtocolSupportEncoder for bool {
 }
 
 impl ProtocolSupportDecoder for bool {
-    fn decode<R: std::io::Read + AsRef<[u8]>>(
-        src: &mut std::io::Cursor<R>,
+    fn decode<R: std::io::Read>(
+        src: &mut R,
         _: &crate::ProtocolVersion,
     ) -> std::io::Result<Self> {
         Ok(match src.read_u8()? {

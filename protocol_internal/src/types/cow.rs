@@ -31,8 +31,8 @@ where
     T: ToOwned + ?Sized,
     T::Owned: ProtocolSupportDecoder,
 {
-    fn decode<R: std::io::Read + AsRef<[u8]>>(
-        src: &mut std::io::Cursor<R>,
+    fn decode<R: std::io::Read>(
+        src: &mut R,
         version: &crate::ProtocolVersion,
     ) -> std::io::Result<Self> {
         T::Owned::decode(src, version).map(Cow::Owned)

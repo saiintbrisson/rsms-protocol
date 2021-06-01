@@ -24,8 +24,8 @@ impl<T: ProtocolSupportEncoder> ProtocolSupportEncoder for Vec<T> {
 }
 
 impl<T: ProtocolSupportDecoder> ProtocolSupportDecoder for Vec<T> {
-    fn decode<R: std::io::Read + AsRef<[u8]>>(
-        src: &mut std::io::Cursor<R>,
+    fn decode<R: std::io::Read>(
+        src: &mut R,
         version: &crate::ProtocolVersion,
     ) -> std::io::Result<Self> {
         let len = VarNum::<i32>::decode(src)? as usize;
@@ -40,8 +40,8 @@ impl<T: ProtocolSupportDecoder> ProtocolSupportDecoder for Vec<T> {
 }
 
 impl<T: ProtocolSupportDecoder> RangeValidatedSupport for Vec<T> {
-    fn decode<R: std::io::Read + AsRef<[u8]>>(
-        src: &mut std::io::Cursor<R>,
+    fn decode<R: std::io::Read>(
+        src: &mut R,
         version: &crate::ProtocolVersion,
         min: usize,
         max: usize,

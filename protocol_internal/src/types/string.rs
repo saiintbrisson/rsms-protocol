@@ -1,5 +1,3 @@
-use std::io::Read;
-
 use crate::{ProtocolSupportDecoder, ProtocolSupportEncoder, RangeValidatedSupport, VarNum};
 
 impl ProtocolSupportEncoder for String {
@@ -18,8 +16,8 @@ impl ProtocolSupportEncoder for String {
 }
 
 impl ProtocolSupportDecoder for String {
-    fn decode<R: std::io::Read + AsRef<[u8]>>(
-        src: &mut std::io::Cursor<R>,
+    fn decode<R: std::io::Read>(
+        src: &mut R,
         version: &crate::ProtocolVersion,
     ) -> std::io::Result<Self> {
         <String as RangeValidatedSupport>::decode(src, version, 0, 32767)
@@ -28,8 +26,8 @@ impl ProtocolSupportDecoder for String {
 
 impl RangeValidatedSupport for String {
     #[inline(always)]
-    fn decode<R: std::io::Read + AsRef<[u8]>>(
-        src: &mut std::io::Cursor<R>,
+    fn decode<R: std::io::Read>(
+        src: &mut R,
         version: &crate::ProtocolVersion,
         min: usize,
         max: usize,

@@ -4,8 +4,8 @@ pub trait RangeValidatedSupport<T = Self>
 where
     T: ProtocolSupportDecoder + Sized,
 {
-    fn decode<R: std::io::Read + AsRef<[u8]>>(
-        src: &mut std::io::Cursor<R>,
+    fn decode<R: std::io::Read>(
+        src: &mut R,
         version: &crate::ProtocolVersion,
         min: usize,
         max: usize,
@@ -17,8 +17,8 @@ macro_rules! impl_range_validated_numeral {
     ($n:ty, VarNum) => {
         impl $crate::RangeValidatedSupport<$n> for $crate::VarNum<$n> {
             #[inline(always)]
-            fn decode<R: std::io::Read + AsRef<[u8]>>(
-                src: &mut std::io::Cursor<R>,
+            fn decode<R: std::io::Read>(
+                src: &mut R,
                 _: &crate::ProtocolVersion,
                 min: usize,
                 max: usize,
@@ -46,8 +46,8 @@ macro_rules! impl_range_validated_numeral {
     ($n:ty) => {
         impl $crate::RangeValidatedSupport for $n {
             #[inline(always)]
-            fn decode<R: std::io::Read + AsRef<[u8]>>(
-                src: &mut std::io::Cursor<R>,
+            fn decode<R: std::io::Read>(
+                src: &mut R,
                 version: &crate::ProtocolVersion,
                 min: usize,
                 max: usize,

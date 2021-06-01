@@ -18,9 +18,9 @@ pub trait PacketEncoder: std::fmt::Debug + ProtocolSupportEncoder {
     fn encode<W: io::Write>(&self, dst: &mut W, version: &ProtocolVersion) -> io::Result<()>;
 }
 
-pub trait PacketDecoder: std::fmt::Debug + ProtocolSupportDecoder {
-    fn decode<R: io::Read + AsRef<[u8]>>(
-        src: &mut io::Cursor<R>,
+pub trait PacketDecoder: std::fmt::Debug + ProtocolSupportDecoder + PacketSizer {
+    fn decode<R: std::io::Read>(
+        src: &mut R,
         version: &ProtocolVersion,
     ) -> io::Result<Self>;
 }
@@ -40,8 +40,8 @@ pub trait ProtocolSupportEncoder {
 }
 
 pub trait ProtocolSupportDecoder: Sized {
-    fn decode<R: io::Read + AsRef<[u8]>>(
-        src: &mut io::Cursor<R>,
+    fn decode<R: std::io::Read>(
+        src: &mut R,
         version: &ProtocolVersion,
     ) -> io::Result<Self>;
 }

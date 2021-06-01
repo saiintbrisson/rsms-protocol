@@ -1,7 +1,8 @@
 #[cfg(feature = "derive")]
 pub use protocol_derive::{packets, ProtocolSupport};
 pub use protocol_internal::{
-    DynArray, PacketDecoder, PacketEncoder, ProtocolSupportDecoder, ProtocolSupportEncoder,
+    DynArray, PacketDecoder, PacketEncoder, PacketSizer,
+    ProtocolSupportDecoder, ProtocolSupportEncoder,
     RangeValidatedSupport, VarNum,
 };
 

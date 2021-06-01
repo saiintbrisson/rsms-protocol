@@ -151,8 +151,8 @@ impl<'a> ProtocolSupportEncoder for ChatComponent<'a> {
 }
 
 impl<'a> ProtocolSupportDecoder for ChatComponent<'a> {
-    fn decode<R: std::io::Read + AsRef<[u8]>>(
-        src: &mut std::io::Cursor<R>,
+    fn decode<R: std::io::Read>(
+        src: &mut R,
         version: &protocol_internal::ProtocolVersion,
     ) -> std::io::Result<Self> {
         serde_json::from_str(&<String as ProtocolSupportDecoder>::decode(src, version)?)
@@ -248,8 +248,8 @@ impl protocol_internal::ProtocolSupportEncoder for ChatColor {
 }
 
 impl protocol_internal::ProtocolSupportDecoder for ChatColor {
-    fn decode<R: std::io::Read + AsRef<[u8]>>(
-        src: &mut std::io::Cursor<R>,
+    fn decode<R: std::io::Read>(
+        src: &mut R,
         version: &protocol_internal::ProtocolVersion,
     ) -> std::io::Result<Self> {
         Ok(Self::from(

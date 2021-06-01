@@ -76,8 +76,8 @@ impl ProtocolSupportEncoder for LoginSuccess {
 }
 
 impl ProtocolSupportDecoder for LoginSuccess {
-    fn decode<R: io::Read + AsRef<[u8]>>(
-        src: &mut io::Cursor<R>,
+    fn decode<R: std::io::Read>(
+        src: &mut R,
         version: &protocol_internal::ProtocolVersion,
     ) -> io::Result<Self> {
         let uuid = match version >= &ProtocolVersionEnum::V1_16 {

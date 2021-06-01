@@ -100,7 +100,7 @@ pub(crate) fn expand(attr: Vec<NestedMeta>, item: ItemMod) -> crate::Result {
         }
 
         impl ::protocol_internal::ProtocolSupportDecoder for #ident {
-            fn decode<R: std::io::Read + AsRef<[u8]>>(_: &mut std::io::Cursor<R>, _: &::protocol_internal::ProtocolVersion) -> std::io::Result<Self> {
+            fn decode<R: std::io::Read>(_: &mut R, _: &::protocol_internal::ProtocolVersion) -> std::io::Result<Self> {
                 unimplemented!();
             }
         }
@@ -120,7 +120,7 @@ pub(crate) fn expand(attr: Vec<NestedMeta>, item: ItemMod) -> crate::Result {
         }
 
         impl ::protocol_internal::PacketDecoder for #ident {
-            fn decode<R: std::io::Read + AsRef<[u8]>>(src: &mut std::io::Cursor<R>, version: &::protocol_internal::ProtocolVersion) -> std::io::Result<Self> {
+            fn decode<R: std::io::Read>(src: &mut R, version: &::protocol_internal::ProtocolVersion) -> std::io::Result<Self> {
                 match ::protocol_internal::VarNum::<i32>::decode(src)? {
                     #(#variants_packet_de),*,
                     id => Err(std::io::Error::new(std::io::ErrorKind::NotFound, format!("invalid packet id {}", id)))

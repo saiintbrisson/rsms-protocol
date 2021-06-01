@@ -5,8 +5,8 @@ use crate::ProtocolSupportDecoder;
 pub struct Regex;
 
 impl Regex {
-    pub fn decode<R: std::io::Read + AsRef<[u8]>>(
-        src: &mut std::io::Cursor<R>,
+    pub fn decode<R: std::io::Read>(
+        src: &mut R,
         version: &crate::ProtocolVersion,
         regex: &regex::Regex,
     ) -> std::io::Result<String> {

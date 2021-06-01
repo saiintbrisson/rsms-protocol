@@ -3,8 +3,8 @@ use crate::ProtocolSupportDecoder;
 pub struct FixedVec;
 
 impl FixedVec {
-    pub fn decode<R: std::io::Read + AsRef<[u8]>, T: ProtocolSupportDecoder>(
-        src: &mut std::io::Cursor<R>,
+    pub fn decode<R: std::io::Read, T: ProtocolSupportDecoder>(
+        src: &mut R,
         version: &crate::ProtocolVersion,
         len: usize,
     ) -> std::io::Result<Vec<T>> {

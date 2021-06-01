@@ -1,7 +1,7 @@
 [workspace]
 members = [
     "misc",
-    "network",
+    # "network",
     "protocol",
     "protocol_derive",
     "protocol_internal"
