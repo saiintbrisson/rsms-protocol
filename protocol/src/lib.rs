@@ -2,7 +2,7 @@
 pub use protocol_derive::{packets, ProtocolSupport};
 pub use protocol_internal::{
     DynArray, PacketDecoder, PacketEncoder, PacketSizer, ProtocolSupportDecoder,
-    ProtocolSupportEncoder, ProtocolVersion, RangeValidatedSupport, VarNum,
+    ProtocolSupportEncoder, ProtocolVersion, ProtocolVersionEnum, RangeValidatedSupport, VarNum,
 };
 
 #[cfg(feature = "packets")]
