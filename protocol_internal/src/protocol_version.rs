@@ -4,7 +4,7 @@ use std::fmt::Debug;
 pub struct ProtocolVersion(i32);
 
 impl ProtocolVersion {
-    pub fn new(version: i32) -> Self {
+    pub const fn new(version: i32) -> Self {
         Self(version)
     }
 }
