@@ -62,7 +62,7 @@ pub enum ProtocolVersionEnum {
 }
 
 impl ProtocolVersionEnum {
-    pub fn find(version: i32) -> Option<Self> {
+    pub const fn find(version: i32) -> Option<Self> {
         Some(match version {
             754 => Self::V1_16_5,
             753 => Self::V1_16_3,
@@ -96,7 +96,7 @@ impl ProtocolVersionEnum {
     }
 
     #[inline]
-    pub fn to_version(&self) -> i32 {
+    pub const fn to_version(&self) -> i32 {
         *self as i32
     }
 }
