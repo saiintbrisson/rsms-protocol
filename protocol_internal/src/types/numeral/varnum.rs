@@ -26,7 +26,7 @@ impl VarNum<i32> {
     }
 
     pub fn encode<W: std::io::Write>(value: &i32, dst: &mut W) -> io::Result<()> {
-        let mut temp = *value;
+        let mut temp = *value as u32;
 
         loop {
             let byte = (temp & 0x7F) as u8;
@@ -66,7 +66,7 @@ impl VarNum<i64> {
     #[inline(always)]
     #[rustfmt::skip]
     pub fn calculate_len(value: &i64) -> usize {
-        let value = *value;
+        let value = *value as u64;
 
         if value as u32 & 0xF0000000 != 0 { 5 }
         else if value as u32 & 0xFFE00000 != 0 { 4 }
@@ -79,9 +79,7 @@ impl VarNum<i64> {
         Ok(())
     }
 
-    pub fn decode<R: std::io::Read>(
-        _src: &mut R,
-    ) -> io::Result<i64> {
+    pub fn decode<R: std::io::Read>(_src: &mut R) -> io::Result<i64> {
         Ok(0)
     }
 }
@@ -104,9 +102,7 @@ impl VarNum<Vec<i32>> {
         Ok(())
     }
 
-    pub fn decode<R: std::io::Read>(
-        src: &mut R,
-    ) -> io::Result<Vec<i32>> {
+    pub fn decode<R: std::io::Read>(src: &mut R) -> io::Result<Vec<i32>> {
         let len = VarNum::<i32>::decode(src)? as usize;
 
         let mut buf = Vec::with_capacity(len);
