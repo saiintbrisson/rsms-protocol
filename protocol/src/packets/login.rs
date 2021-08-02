@@ -55,10 +55,12 @@ packet!(0x02 => LoginSuccess);
 
 impl ProtocolSupportEncoder for LoginSuccess {
     fn calculate_len(&self, version: &protocol_internal::ProtocolVersion) -> usize {
-        self.username.calculate_len(version) + match version >= &ProtocolVersionEnum::V1_16 {
-            true => 16,
-            false => 37,
-        }
+        self.username.calculate_len(version)
+            + if version >= &ProtocolVersionEnum::V1_16 {
+                16
+            } else {
+                37
+            }
     }
 
     fn encode<W: io::Write>(
@@ -66,9 +68,10 @@ impl ProtocolSupportEncoder for LoginSuccess {
         dst: &mut W,
         version: &protocol_internal::ProtocolVersion,
     ) -> io::Result<()> {
-        match version >= &ProtocolVersionEnum::V1_16 {
-            true => self.uuid.encode(dst, version),
-            false => self.uuid.to_string().encode(dst, version),
+        if version >= &ProtocolVersionEnum::V1_16 {
+            self.uuid.encode(dst, version)
+        } else {
+            self.uuid.to_string().encode(dst, version)
         }?;
 
         self.username.encode(dst, version)
@@ -80,15 +83,16 @@ impl ProtocolSupportDecoder for LoginSuccess {
         src: &mut R,
         version: &protocol_internal::ProtocolVersion,
     ) -> io::Result<Self> {
-        let uuid = match version >= &ProtocolVersionEnum::V1_16 {
-            true => Uuid::decode(src, version),
-            false => Uuid::parse_str(&String::decode(src, version)?)
-                .map_err(|err| io::Error::new(io::ErrorKind::InvalidData, err)),
+        let uuid = if version >= &ProtocolVersionEnum::V1_16 {
+            Uuid::decode(src, version)
+        } else {
+            Uuid::parse_str(&String::decode(src, version)?)
+                .map_err(|err| io::Error::new(io::ErrorKind::InvalidData, err))
         }?;
 
         Ok(Self {
             uuid,
-            username: String::decode(src, version)?
+            username: String::decode(src, version)?,
         })
     }
 }
