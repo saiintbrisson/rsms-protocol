@@ -7,12 +7,23 @@ edition = "2018"
 # See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
 
 [dependencies]
-protocol_internal = { path = "../protocol_internal" }
+protocol = { path = "../protocol", optional = true }
+protocol_internal = { path = "../protocol_internal", optional = true }
 
-aes = "0.6.0"
-cfb8 = "0.6.0"
-flate2 = { version = "1.0.20", features = ["zlib"] }
+
+aes = { version = "0.7.0", optional = true }
+cfb8 = { version = "0.7.1", optional = true }
+flate2 = { version = "1.0.20", optional = true }
+tokio-util = { version = "0.6.6", features = ["codec"], optional = true }
+bytes = { version = "1.0.1", optional = true }
 
 [dependencies.tokio]
 version = "1.5.0"
-features = ["net", "io-util", "sync"]
+features = ["io-util"]
+optional = true
+
+[features]
+default = ["aio", "codec"]
+
+aio = ["tokio", "tokio/io-util"]
+codec = ["protocol", "protocol_internal", "bytes", "tokio-util/codec", "flate2", "aes", "cfb8"]
