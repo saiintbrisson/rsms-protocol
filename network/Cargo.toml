@@ -10,7 +10,6 @@ edition = "2018"
 protocol = { path = "../protocol", optional = true }
 protocol_internal = { path = "../protocol_internal", optional = true }
 
-
 aes = { version = "0.7.0", optional = true }
 cfb8 = { version = "0.7.1", optional = true }
 flate2 = { version = "1.0.20", optional = true }
@@ -21,6 +20,9 @@ bytes = { version = "1.0.1", optional = true }
 version = "1.5.0"
 features = ["io-util"]
 optional = true
+
+[dev-dependencies]
+futures = "0.3.16"
 
 [features]
 default = ["aio", "codec"]
