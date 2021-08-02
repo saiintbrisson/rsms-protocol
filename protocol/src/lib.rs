@@ -10,6 +10,7 @@ pub mod packets {
     pub mod handshake;
     pub mod login;
     pub mod macros;
+    /// This is module only supports the `47` protocol version.
     pub mod play;
     pub mod status;
 }
