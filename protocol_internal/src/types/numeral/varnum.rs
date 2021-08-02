@@ -113,3 +113,19 @@ impl VarNum<Vec<i32>> {
         Ok(buf)
     }
 }
+
+pub trait VarNumExt {
+    fn varnum_len(&self) -> usize;
+}
+
+impl VarNumExt for i32 {
+    fn varnum_len(&self) -> usize {
+        VarNum::<i32>::calculate_len(&self)
+    }
+}
+
+impl VarNumExt for i64 {
+    fn varnum_len(&self) -> usize {
+        VarNum::<i64>::calculate_len(&self)
+    }
+}

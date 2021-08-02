@@ -17,6 +17,6 @@ mod vec;
 pub use self::regex::Regex;
 pub use dyn_array::DynArray;
 pub use fixed_vec::FixedVec;
-pub use numeral::varnum::VarNum;
+pub use numeral::varnum::{VarNum, VarNumExt};
 pub use position::{ProtocolPosition, ProtocolPositionSupport};
 pub use range_validation::RangeValidatedSupport;
