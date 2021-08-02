@@ -7,6 +7,14 @@ impl ProtocolVersion {
     pub const fn new(version: i32) -> Self {
         Self(version)
     }
+
+    pub const fn as_enum(&self) -> Option<ProtocolVersionEnum> {
+        ProtocolVersionEnum::find(self.0)
+    }
+
+    pub const fn is_known(&self) -> bool {
+        self.as_enum().is_some()
+    }
 }
 
 impl std::ops::Deref for ProtocolVersion {
