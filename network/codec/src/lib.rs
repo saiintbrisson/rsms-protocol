@@ -1,58 +1,90 @@
 use std::io::{self, Error, ErrorKind, Read, Write};
 
+#[cfg(feature = "encryption")]
 use aes::cipher::{AsyncStreamCipher, NewCipher};
 use bytes::{Buf, BytesMut};
+#[cfg(feature = "encryption")]
 use cfb8::Cfb8;
+#[cfg(feature = "compression")]
 use flate2::{read::ZlibDecoder, write::ZlibEncoder, Compression};
-use protocol_internal::{PacketDecoder, PacketEncoder, ProtocolVersion, VarNum, VarNumExt};
+use protocol::{PacketDecoder, PacketEncoder, ProtocolVersion, VarNum, VarNumExt};
 use tokio_util::codec::{Decoder, Encoder};
 
+#[cfg(feature = "encryption")]
 type AesCfb8 = Cfb8<aes::Aes128>;
 
-pub struct Codec {
+pub struct Codec<T> {
     version: ProtocolVersion,
-
-    cipher: Option<AesCfb8>,
-    compression_threshold: Option<usize>,
 
     staging_buf: BytesMut,
     payload_len: Option<usize>,
+
+    #[cfg(feature = "compression")]
+    compression_threshold: Option<usize>,
+    #[cfg(feature = "encryption")]
+    cipher: Option<AesCfb8>,
+
+    _data: std::marker::PhantomData<T>,
 }
 
-impl Codec {
+impl<T> Codec<T> {
     /// Get a reference to the codec's version.
     pub fn version(&self) -> &ProtocolVersion {
         &self.version
     }
 
     /// Enables zlib compression for this codec.
+    #[cfg(feature = "compression")]
     pub fn enable_compression(&mut self, threshold: i32) {
+        tracing::debug!(%threshold, "enabled compression");
         self.compression_threshold = Some(threshold as usize);
     }
 
     /// Enables aes-cfb8 encryption for this codec.
+    #[cfg(feature = "encryption")]
     pub fn enable_encryption(&mut self, secret: &[u8; 16]) {
+        tracing::debug!("enabled encryption");
         self.cipher = Some(AesCfb8::new_from_slices(&secret[..], &secret[..]).unwrap())
+    }
+
+    /// Adapts this codec to a new packet decoder.
+    pub fn adapt<N>(self) -> Codec<N> {
+        Codec {
+            version: self.version,
+            staging_buf: self.staging_buf,
+            payload_len: self.payload_len,
+            compression_threshold: self.compression_threshold,
+            cipher: self.cipher,
+            _data: Default::default(),
+        }
     }
 }
 
-impl<I> From<I> for Codec
+impl<I, T> From<I> for Codec<T>
 where
     I: Into<ProtocolVersion>,
 {
     fn from(version: I) -> Self {
         Self {
             version: version.into(),
-            cipher: None,
-            compression_threshold: None,
             staging_buf: BytesMut::with_capacity(512),
             payload_len: None,
+
+            #[cfg(feature = "encryption")]
+            cipher: None,
+            #[cfg(feature = "compression")]
+            compression_threshold: None,
+
+            _data: Default::default(),
         }
     }
 }
 
-impl Decoder for Codec {
-    type Item = protocol::packets::play::ServerBound;
+impl<T> Decoder for Codec<T>
+where
+    T: PacketDecoder,
+{
+    type Item = T;
 
     type Error = Error;
 
@@ -62,6 +94,7 @@ impl Decoder for Codec {
             _ => {}
         };
 
+        #[cfg(feature = "encryption")]
         if let Some(cipher) = self.cipher.as_mut() {
             cipher.decrypt(&mut src[..]);
         }
@@ -83,6 +116,7 @@ impl Decoder for Codec {
 
         let mut buf = &self.staging_buf[..];
 
+        #[cfg(feature = "compression")]
         let mut src = match self.compression_threshold {
             Some(threshold) => {
                 let uncompressed_len = VarNum::<i32>::decode(&mut buf)? as usize;
@@ -103,6 +137,8 @@ impl Decoder for Codec {
             }
             None => Reader::RawReader(buf),
         };
+        #[cfg(not(feature = "compression"))]
+        let mut src = Reader::RawReader(buf);
 
         let packet = PacketDecoder::decode(&mut src, &self.version)?;
 
@@ -113,7 +149,7 @@ impl Decoder for Codec {
     }
 }
 
-impl<P> Encoder<P> for Codec
+impl<P, T> Encoder<P> for Codec<T>
 where
     P: PacketEncoder,
 {
@@ -123,6 +159,7 @@ where
         let pos = dst.len();
         let len = PacketEncoder::calculate_len(&item, &self.version);
 
+        #[cfg(feature = "compression")]
         match self.compression_threshold {
             Some(threshold) if len >= threshold => {
                 let mut buf = Vec::with_capacity(len);
@@ -160,6 +197,16 @@ where
             }
         }
 
+        #[cfg(not(feature = "compression"))]
+        {
+            dst.resize(dst.len() + len + (len as i32).varnum_len(), 0);
+
+            let dst = &mut &mut dst[pos..];
+            VarNum::<i32>::encode(&(len as i32), dst)?;
+            PacketEncoder::encode(&item, dst, &self.version)?;
+        }
+
+        #[cfg(feature = "encryption")]
         if let Some(cipher) = self.cipher.as_mut() {
             cipher.encrypt(&mut dst[pos..]);
         }
@@ -169,6 +216,7 @@ where
 }
 
 enum Reader<T> {
+    #[cfg(feature = "compression")]
     CompressedReader(ZlibDecoder<T>),
     RawReader(T),
 }
@@ -176,6 +224,7 @@ enum Reader<T> {
 impl<T: Read> Read for Reader<T> {
     fn read(&mut self, buf: &mut [u8]) -> io::Result<usize> {
         match self {
+            #[cfg(feature = "compression")]
             Reader::CompressedReader(src) => src.read(buf),
             Reader::RawReader(src) => src.read(buf),
         }
@@ -209,7 +258,7 @@ mod test {
 
     use super::*;
 
-    fn test_codec(mut codec: Codec) {
+    fn test_codec(mut codec: Codec<ServerBound>) {
         let mut buf = BytesMut::new();
 
         let packet = ServerBound::PluginMessage(PluginMessage {
@@ -230,10 +279,15 @@ mod test {
     fn test_codec_roundtrip_uncompressed() {
         test_codec(Codec {
             version: ProtocolVersionEnum::V1_8.into(),
-            cipher: None,
-            compression_threshold: None,
             staging_buf: BytesMut::with_capacity(128),
             payload_len: None,
+
+            #[cfg(feature = "compression")]
+            compression_threshold: None,
+            #[cfg(feature = "encryption")]
+            cipher: None,
+
+            _data: Default::default(),
         });
     }
 
@@ -241,10 +295,15 @@ mod test {
     fn test_codec_roundtrip_under_compression_threshold() {
         test_codec(Codec {
             version: ProtocolVersionEnum::V1_8.into(),
-            cipher: None,
-            compression_threshold: Some(256),
             staging_buf: BytesMut::with_capacity(128),
             payload_len: None,
+
+            #[cfg(feature = "compression")]
+            compression_threshold: Some(256),
+            #[cfg(feature = "encryption")]
+            cipher: None,
+
+            _data: Default::default(),
         });
     }
 
@@ -252,14 +311,20 @@ mod test {
     fn test_codec_roundtrip_over_compression_threshold() {
         test_codec(Codec {
             version: ProtocolVersionEnum::V1_8.into(),
-            cipher: None,
-            compression_threshold: Some(128),
             staging_buf: BytesMut::with_capacity(128),
             payload_len: None,
+
+            #[cfg(feature = "compression")]
+            compression_threshold: Some(128),
+            #[cfg(feature = "encryption")]
+            cipher: None,
+
+            _data: Default::default(),
         });
     }
 
-    fn test_codec_cipher(mut codec: Codec) {
+    #[cfg(feature = "encryption")]
+    fn test_codec_cipher(mut codec: Codec<ServerBound>) {
         #[rustfmt::skip]
         const SECRET: [u8; 16] = [
             0x0, 0x1, 0x2, 0x3, 
@@ -288,24 +353,32 @@ mod test {
     }
 
     #[test]
+    #[cfg(feature = "encryption")]
     fn test_codec_roundtrip_encrypted() {
         test_codec_cipher(Codec {
             version: ProtocolVersionEnum::V1_8.into(),
-            cipher: None,
-            compression_threshold: None,
             staging_buf: BytesMut::with_capacity(128),
             payload_len: None,
+
+            compression_threshold: None,
+            cipher: None,
+
+            _data: Default::default(),
         });
     }
 
     #[test]
+    #[cfg(all(feature = "compression", feature = "encryption"))]
     fn test_codec_roundtrip_encrypted_compressed() {
         test_codec_cipher(Codec {
             version: ProtocolVersionEnum::V1_8.into(),
-            cipher: None,
-            compression_threshold: Some(128),
             staging_buf: BytesMut::with_capacity(128),
             payload_len: None,
+
+            compression_threshold: Some(128),
+            cipher: None,
+
+            _data: Default::default(),
         });
     }
 }

@@ -2,4 +2,4 @@
 pub mod aio;
 
 #[cfg(feature = "codec")]
-pub mod codec;
+pub extern crate codec;
