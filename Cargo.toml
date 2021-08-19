@@ -2,7 +2,8 @@
 members = [
     "misc",
     "network",
+    "network/codec",
     "protocol",
     "protocol_derive",
-    "protocol_internal"
+    "protocol_internal",
 ]
