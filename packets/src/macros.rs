@@ -1,16 +1,16 @@
 #[macro_export]
 macro_rules! packet {
     ($id:expr => $name:ident $(<$($l:lifetime),+>)?) => {};
-    ($id:expr => $name:ident $(<$($l:lifetime),+>)? ($($(#[$m:meta])? $fty:ty),+)) => {
+    ($id:expr => $name:ident $(<$($l:lifetime),+>)? ($($(#[$m:meta])? $fty:ty),*)) => {
         #[derive(Debug, ::proc_macros::Codec)]
-        pub struct $name($($(#[$m:meta])? pub $fty),+);
+        pub struct $name($($(#[$m:meta])? pub $fty),*);
     };
     ($id:expr => $name:ident $(<$($l:lifetime),+>)? {
-        $($(#[$m:meta])? $fna:ident: $fty:ty),+$(,)?
+        $($(#[$m:meta])? $fna:ident: $fty:ty),*
     }) => {
         #[derive(Debug, ::proc_macros::Codec)]
         pub struct $name $(<$($l),+>)? {
-            $($(#[$m])? pub $fna: $fty),+
+            $($(#[$m])? pub $fna: $fty),*
         }
     };
     ($id:expr => impl $name:ident) => {};
@@ -26,11 +26,11 @@ pub use packet;
 macro_rules! packet_group {
     ($name:ident $(<$($gl:lifetime),+>)? {
         $($id:expr => $p:ident $(<$($l:lifetime),+>)? $({
-            $($(#[$m:meta])? $fna:ident: $fty:ty),+$(,)?
+            $($(#[$m:meta])? $fna:ident: $fty:ty),*
         })?),+
     }) => {
         $($crate::macros::packet!($id => $p $(<$($l),+>)? $({
-            $($(#[$m])? $fna: $fty),+
+            $($(#[$m])? $fna: $fty),*
         })?);)+
 
         #[derive(::proc_macros::Packet)]

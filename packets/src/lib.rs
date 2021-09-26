@@ -18,9 +18,9 @@ pub trait Packet: Sized {
 }
 
 #[cfg(feature = "handshake")]
-packet!(0x00 => Handshake<'a> {
+packet!(0x00 => Handshake {
     protocol_version: Version,
-    server_address: Cow<'a, str>,
+    server_address: String,
     server_port: u16,
     next_state: i32
 });
@@ -45,29 +45,29 @@ pub mod login {
     packet_group!(ServerBound<'a> {
         0x00 => LoginStart<'a> {
             #[constraints(range(min = 1, max = 16), regex = "^\\w{1,16}$")]
-            username: Cow<'a, str>,
+            username: Cow<'a, str>
         },
         0x01 => EncryptionResponse<'a> {
             shared_secret: Cow<'a, [u8]>,
-            verify_token: Cow<'a, [u8]>,
+            verify_token: Cow<'a, [u8]>
         }
     });
     packet_group!(ClientBound<'a> {
         0x00 => Disconnect<'a> {
-            reason: Cow<'a, str>,
+            reason: Cow<'a, str>
         },
         0x01 => EncryptionRequest<'a> {
             server_id: Cow<'a, str>,
             public_key: Cow<'a, [u8]>,
-            verify_token: Cow<'a, [u8]>,
+            verify_token: Cow<'a, [u8]>
         },
         0x02 => LoginSuccess<'a> {
             #[codec(custom(decoder = "decode_uuid", encoder = "encode_uuid"))]
             uuid: Uuid,
-            username: Cow<'a, str>,
+            username: Cow<'a, str>
         },
         0x03 => SetCompression {
-            threshold: i32,
+            threshold: i32
         }
     });
 
@@ -110,15 +110,15 @@ pub mod status {
     packet_group!(ServerBound {
         0x00 => Request,
         0x01 => Ping {
-            payload: i64,
+            payload: i64
         }
     });
     packet_group!(ClientBound<'a> {
         0x00 => Response<'a> {
-            response: Cow<'a, str>,
+            response: Cow<'a, str>
         },
         0x01 => Pong {
-            payload: i64,
+            payload: i64
         }
     });
 }
