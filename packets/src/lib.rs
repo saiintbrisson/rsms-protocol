@@ -20,8 +20,10 @@ pub trait Packet: Sized {
 #[cfg(feature = "handshake")]
 packet!(0x00 => Handshake {
     protocol_version: Version,
+    #[constraints(range(max = 255))]
     server_address: String,
     server_port: u16,
+    #[codec(varint)]
     next_state: i32
 });
 

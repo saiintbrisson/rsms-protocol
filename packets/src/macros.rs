@@ -33,7 +33,7 @@ macro_rules! packet_group {
             $($(#[$m])? $fna: $fty),*
         })?);)+
 
-        #[derive(::proc_macros::Packet)]
+        #[derive(Debug, ::proc_macros::Packet)]
         pub enum $name $(<$($gl),+>)? {
             $($p($p$(<$($l),+>)?)),+
         }
