@@ -1,5 +1,5 @@
 #[cfg(feature = "macros")]
-mod macros;
+pub mod macros;
 
 use std::{borrow::Cow, io::Result};
 

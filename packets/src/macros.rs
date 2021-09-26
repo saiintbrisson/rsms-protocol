@@ -20,8 +20,6 @@ macro_rules! packet {
     };
 }
 
-pub use packet;
-
 #[macro_export]
 macro_rules! packet_group {
     ($name:ident $(<$($gl:lifetime),+>)? {
@@ -29,7 +27,7 @@ macro_rules! packet_group {
             $($(#[$m:meta])? $fna:ident: $fty:ty),*
         })?),+
     }) => {
-        $($crate::macros::packet!($id => $p $(<$($l),+>)? $({
+        $($crate::packet!($id => $p $(<$($l),+>)? $({
             $($(#[$m])? $fna: $fty),*
         })?);)+
 
@@ -81,5 +79,3 @@ macro_rules! packet_group {
         }
     };
 }
-
-pub use packet_group;
