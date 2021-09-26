@@ -1,3 +1,4 @@
+mod arc;
 mod bool;
 mod cow;
 mod misc;
