@@ -1,0 +1,6 @@
+[workspace]
+members = [
+    "packets",
+    "proc_macros",
+    "protocol_primitives"
+]
