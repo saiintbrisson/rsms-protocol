@@ -68,6 +68,8 @@ impl Debug for Version {
 #[repr(u16)]
 #[derive(Clone, Copy, Debug, PartialEq, Eq, PartialOrd, Ord)]
 pub enum VersionEnum {
+    V1_17_1 = 756,
+    V1_17 = 755,
     V1_16_5 = 754,
     V1_16_3 = 753,
     V1_16_2 = 751,
