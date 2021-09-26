@@ -1,3 +1,4 @@
+#[cfg(feature = "macros")]
 mod macros;
 
 use std::{borrow::Cow, io::Result};
@@ -16,6 +17,7 @@ pub trait Packet: Sized {
     ) -> Result<usize>;
 }
 
+#[cfg(feature = "handshake")]
 packet!(0x00 => Handshake<'a> {
     protocol_version: Version,
     server_address: Cow<'a, str>,
@@ -23,6 +25,7 @@ packet!(0x00 => Handshake<'a> {
     next_state: i32
 });
 
+#[cfg(feature = "login")]
 pub mod login {
     use std::{
         io::{Error, ErrorKind, Result},
@@ -94,6 +97,7 @@ pub mod login {
     }
 }
 
+#[cfg(feature = "status")]
 pub mod status {
     use super::*;
 
@@ -119,6 +123,7 @@ pub mod status {
     });
 }
 
+#[cfg(feature = "play_1_8")]
 pub mod play {
     use super::*;
 

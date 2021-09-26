@@ -1,4 +1,4 @@
-mod arc;
+mod rc;
 mod bool;
 mod cow;
 mod misc;

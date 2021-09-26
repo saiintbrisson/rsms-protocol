@@ -10,3 +10,11 @@ proc_macros = { path = "../proc_macros" }
 protocol_primitives = { path = "../protocol_primitives" }
 uuid = "0.8.2"
 
+[features]
+default = ["macros", "handshake", "status", "login", "play_1_8"]
+
+macros = []
+handshake = ["macros"]
+status = ["macros"]
+login = ["macros"]
+play_1_8 = ["macros"]
